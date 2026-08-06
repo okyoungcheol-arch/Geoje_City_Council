@@ -27,14 +27,62 @@ test("excludes 5분자유발언 turns from the returned statements", () => {
 });
 
 test("excludes procedural taged-line turns and agenda-item headers from the output", () => {
-  // real fixture: con_idx=0 is a "(10시 09분 개의)" taged-line with no speaker — it must not
-  // surface as a statement in its own right (its text never appears standalone as rawText)
+  // real fixture: con_idx=0 is a standalone "(10시 09분  개의)" taged-line with no speaker
+  // (no <strong> at all) — it must not surface as its own statement, and no *other*
+  // statement's rawText should begin with a bare timestamp-parenthetical like this, which
+  // would only happen if a standalone procedural block were mis-classified as a turn.
+  // (A meaningfully stronger check than string-equality against one exact known string,
+  // since that exact block would incidentally be dropped by the memberName guard too —
+  // this instead exercises the classification branch's actual selectivity.)
   const statements = parseMinutesHtml(loadFixture());
-  expect(statements.some((s) => s.rawText === "(10시 09분 개의)")).toBe(false);
+  expect(statements.some((s) => /^\(\d{1,2}시\s*\d{2}분/.test(s.rawText))).toBe(false);
   // real fixture: con_idx=4/26/28/30/34/36/40 are item-in-contents agenda headers whose own
   // title text (e.g. "6. 휴회의 건") must never appear as a statement's rawText verbatim
   expect(statements.some((s) => s.rawText === "6. 휴회의 건")).toBe(false);
   expect(statements.every((s) => !s.rawText.includes("자유발언"))).toBe(true);
+  // real fixture: con_idx=41 has an *embedded* taged-line reaction mid-speech
+  // ("(“예” 하는 의원 있음)") inside a genuine speaker-block turn — this positively confirms
+  // the classification branch checks speaker-block membership (not mere .taged-line
+  // presence), since this turn must still surface as a statement despite containing one.
+  expect(statements.some((s) => s.rawText.includes("산회를 선포합니다"))).toBe(true);
+});
+
+test("does not false-positive the fail-closed 5분자유발언 TOC cross-check on the real fixture", () => {
+  // the real fixture's #item-block TOC does list a 5분자유발언 entry (item1), and the body
+  // does correctly carry a matching .item-in-contents header — so parsing must succeed
+  // normally, not throw. This guards against the new tripwire being overly aggressive.
+  expect(() => parseMinutesHtml(loadFixture())).not.toThrow();
+});
+
+test("throws (fail-closed) when the TOC lists a 5분자유발언 item but no matching body header was detected", () => {
+  // Minimal synthetic document modeling the one failure mode the tripwire exists for: the
+  // TOC (#item-block) independently lists a 5분자유발언 agenda item, but the in-body
+  // .item-in-contents header for it is missing/differently-shaped, so the exclusion logic's
+  // primary signal (currentAgenda matching the free-speech regex) would never fire and the
+  // turn below would otherwise leak through silently as a normal statement.
+  const html = `
+    <div id="minutes">
+      <ol id="item-block">
+        <li><a href="#item1" title="○5분 자유발언(홍길동 의원)">5분 자유발언</a></li>
+      </ol>
+      <div id="minutes-body">
+        <div class="contents-block" data-con_idx="0">
+          <strong class="item-in-contents-RENAMED" id="item1" title="○5분 자유발언(홍길동 의원)">○5분 자유발언(홍길동 의원)</strong>
+        </div>
+        <div class="contents-block speaker-block member-speech" data-con_idx="1" data-member_code="00001">
+          <strong>○<a>홍길동</a> 의원</strong> 이것은 유출되면 안 되는 5분자유발언 내용입니다.
+        </div>
+      </div>
+    </div>`;
+  expect(() => parseMinutesHtml(html)).toThrow(/5분자유발언 agenda item found in TOC/);
+});
+
+test("throws (fail-closed) when no .contents-block turns are found under #minutes-body", () => {
+  // Models a future site restructuring of #minutes-body (the exact class of selector-scope
+  // bug found while building this parser) — the parser must not silently return [] and let
+  // the pipeline record an empty-but-"successful" meeting.
+  const html = `<div id="minutes"><ol id="item-block"></ol><div id="minutes-body-RENAMED"></div></div>`;
+  expect(() => parseMinutesHtml(html)).toThrow(/no \.contents-block turns found/);
 });
 
 test("returns exactly the real, hand-verified count of non-free-speech statements", () => {

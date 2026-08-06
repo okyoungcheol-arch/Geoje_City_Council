@@ -181,35 +181,52 @@ Full captured page saved at `scripts/scrape/__fixtures__/viewer-minutes-uid5236.
         <div id="minutes-header"> ... session/title/date metadata ... </div>
         <ol id="agenda-block"> ... 의사일정 (agenda outline) list ... </ol>
         <ol id="item-block"> ... 부의된 안건 (referred items), links to #item1, #item2, ... </ol>
-        <!-- then a flat sequence of contents-block divs, one per "turn": -->
-        <div class="contents-block" data-con_idx="0">
-          <p class="taged-line tag-R">(10시 09분  개의)</p>
-        </div>
-        <div class="contents-block speaker-block member-speech"
-             data-con_idx="1" data-member_code="08080">
-          <strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182"
-             href="#profile_layer_popup" data-uid="182"
-             title="안석봉 의원 프로필 보기">안석봉</a></strong>
-          &nbsp;&nbsp;성원이 되었으므로 제264회 거제시의회 임시회 제1차 본회의를
-          개의하겠습니다.<br>
-          &nbsp;&nbsp;의회사무국장으로부터 집회보고 ...
-        </div>
-        <div class="contents-block" data-con_idx="4">
-          <strong class="item-in-contents" id="item1"
-             title="○5분 자유발언(이미숙·추인호·최양희·김동수·김영규 의원)">
-             ○5분 자유발언(...)</strong>
-        </div>
-        <div class="contents-block speaker-block member-speech"
-             data-con_idx="12" data-member_code="08030">
-          <strong>○김동수 위원 <a class="member_profile btn_profile" id="btn_profile_183"
-             href="#profile_layer_popup" data-uid="183"
-             title="김동수 의원 프로필 보기">김동수</a></strong>
-          &nbsp;&nbsp;주제: 공공시설 용지 환매권 관리 강화와 시민 혈세 낭비 대책 촉구<br>
-          ...
-        </div>
-        <div class="contents-block speaker-block" data-con_idx="2" data-member_code="">
-          <strong>○사무국장 직무대리 윤병삼</strong>
-          &nbsp;&nbsp;의회사무국장 직무대리 윤병삼입니다. ...
+        <hr>
+        <!-- CORRECTED (Task 5): contents-block divs are NOT direct children of #minutes —
+             they're nested one level deeper, inside this #minutes-body wrapper, which sits
+             after #item-block as a sibling of #minutes-header/#agenda-block/#item-block.
+             A parser scoping its selector to "#minutes > .contents-block" (as originally
+             assumed here) matches zero elements against the real page; it must be
+             "#minutes-body > .contents-block" instead. Confirmed directly against
+             backend/scripts/scrape/__fixtures__/viewer-minutes-uid5236.html — see
+             backend/scripts/scrape/minutes.ts and task-5-report.md for detail. -->
+        <div id="minutes-body">
+          <!-- a flat sequence of contents-block divs, one per "turn": -->
+          <div class="contents-block" data-con_idx="0">
+            <p class="taged-line tag-R">(10시 09분  개의)</p>
+          </div>
+          <div class="contents-block speaker-block member-speech"
+               data-con_idx="1" data-member_code="08080">
+            <strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182"
+               href="#profile_layer_popup" data-uid="182"
+               title="안석봉 의원 프로필 보기">안석봉</a></strong>
+            &nbsp;&nbsp;성원이 되었으므로 제264회 거제시의회 임시회 제1차 본회의를
+            개의하겠습니다.<br>
+            &nbsp;&nbsp;의회사무국장으로부터 집회보고 ...
+          </div>
+          <div class="contents-block" data-con_idx="4">
+            <strong class="item-in-contents" id="item1"
+               title="○5분 자유발언(이미숙·추인호·최양희·김동수·김영규 의원)">
+               ○5분 자유발언(...)</strong>
+          </div>
+          <div class="contents-block speaker-block member-speech"
+               data-con_idx="12" data-member_code="08030">
+            <strong>○<a class="member_profile btn_profile" id="btn_profile_183"
+               href="#profile_layer_popup" data-uid="183"
+               title="김동수 의원 프로필 보기">김동수</a> 의원</strong>
+            &nbsp;&nbsp;주제: 공공시설 용지 환매권 관리 강화와 시민 혈세 낭비 대책 촉구<br>
+            ...
+          </div>
+          <div class="contents-block speaker-block" data-con_idx="2" data-member_code="">
+            <strong>○사무국장 직무대리 윤병삼</strong>
+            &nbsp;&nbsp;의회사무국장 직무대리 윤병삼입니다. ...
+          </div>
+          <!-- also confirmed (Task 5): a genuine speaker turn can itself contain an embedded
+               taged-line audience reaction mid-speech (not just as its own standalone block),
+               e.g. data-con_idx="41" — a parser must classify by .speaker-block membership,
+               not by mere presence/absence of a nested .taged-line, or it will silently drop
+               legitimate statements (5 turns were dropped this way while building minutes.ts
+               before the check order was fixed; see task-5-report.md). -->
         </div>
       </div>
     </div>
