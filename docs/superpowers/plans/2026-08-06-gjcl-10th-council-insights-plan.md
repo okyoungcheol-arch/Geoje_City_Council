@@ -39,13 +39,12 @@
 ### Task 1: Initialize the backend Next.js API project with Postgres + AI Gateway
 
 **Files:**
-- Create: `backend/package.json`, `backend/next.config.ts`, `backend/tsconfig.json`
-- Create: `backend/drizzle.config.ts`, `backend/db/schema.ts`
+- Create: `backend/package.json`, `backend/next.config.ts`, `backend/tsconfig.json` (via `create-next-app`)
+- Create: `backend/drizzle.config.ts`
 - Create: `backend/.env.example`
-- Create: `backend/vercel.ts`
 
 **Interfaces:**
-- Produces: `db` client export from `backend/db/client.ts` used by every later scraper/pipeline/API task.
+- Produces: a linked Vercel project with `DATABASE_URL` and `VERCEL_OIDC_TOKEN` available in `backend/.env.local` — Task 2 (`backend/db/client.ts`) and all later scraper/pipeline/API tasks depend on these environment variables existing.
 
 - [ ] **Step 1: Scaffold the Next.js app (API-only)**
 
@@ -65,11 +64,13 @@ npm install -D drizzle-kit tsx
 
 ```bash
 vercel link --yes
-vercel integration add neon --yes --no-claim
+vercel integration add neon
 vercel env pull .env.local --yes
 ```
 
-If `vercel integration add neon` requires a dashboard/browser step to finish, it will print a URL — stop and ask the human partner to complete it there, then re-run `vercel env pull .env.local --yes`. Confirm `DATABASE_URL` is present in `.env.local` before continuing.
+(Vercel CLI 54.x does not accept `--yes`/`--no-claim` on `vercel integration add` — use the bare command. If a future CLI version adds them back, they're harmless no-ops.)
+
+The first time any Vercel account installs the Neon marketplace integration, Vercel requires a one-time Terms-of-Service acceptance that only a human can grant — the CLI prints a `verification_uri` (`https://vercel.com/{team}/~/integrations/accept-terms/neon?source=cli`) instead of finishing. **Do not run `vercel integration accept-terms neon --yes` on the human's behalf** — accepting a third-party EULA is their decision, not the implementer's. Stop and ask the human partner to open that URL and accept, then re-run `vercel integration add neon` followed by `vercel env pull .env.local --yes`. Confirm `DATABASE_URL` is present in `.env.local` before continuing.
 
 - [ ] **Step 4: Confirm AI Gateway auth (OIDC, no manual key)**
 
@@ -105,8 +106,9 @@ Run: `npm run dev` (from `backend/`) and confirm `http://localhost:3000` respond
 
 - [ ] **Step 7: Commit**
 
+If this worktree is already a git repository (it is, if you're executing this plan via subagent-driven-development), just add and commit — do not run `git init` again:
+
 ```bash
-git init
 git add -A
 git commit -m "chore: scaffold backend Next.js API project with Postgres + AI Gateway wiring"
 ```
