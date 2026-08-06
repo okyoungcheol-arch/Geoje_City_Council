@@ -1,54 +1,57 @@
-# 거제시의회 제10대 회의 AI 인사이트 대시보드 — Implementation Plan
+# 거제시의회 제10대 회의 AI 인사이트 앱 — Implementation Plan (v2, mobile)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
 > **Design spec:** `docs/superpowers/specs/2026-08-06-gjcl-10th-council-insights-design.md`
+> **Supersedes:** the original Next.js-dashboard-with-video-jump plan. Video scraping/timestamp tasks are dropped entirely; the dashboard is replaced by a React Native (Expo) mobile app backed by a Next.js API.
 
-**Goal:** Build a system that scrapes 거제시의회(gjcl.go.kr) 제10대 회의(5분자유발언 제외)의 회의록·영상 데이터, runs a two-stage AI pipeline (Claude Sonnet 5 for summarization/tagging, Claude Opus 5 for 5-axis "AI insight" scoring) on each council member's statements, and serves the results in a Next.js dashboard where clicking a tag jumps to the corresponding point in the meeting video.
+**Goal:** Build a system that scrapes 거제시의회(gjcl.go.kr) 제10대 회의(5분자유발언 제외) 회의록 텍스트, runs a two-stage AI pipeline (Claude Sonnet 5 for summarization/tagging, Claude Opus 5 for 5-axis "AI insight" scoring) on each council member's statements, exposes the results via a Next.js API, and renders them in a React Native (Expo) mobile app where tapping a tag opens the statement's full minutes text.
 
-**Architecture:** A three-part pipeline: (1) a Playwright-based TypeScript scraper that walks the council site's meeting/minutes/video menus and writes normalized rows to Postgres; (2) a batch AI-processing script that reads unprocessed statements, calls Sonnet 5 for summary+tags then Opus 5 for the 5 rating dimensions, and writes results back to Postgres; (3) a Next.js (App Router) dashboard deployed on Vercel that reads from Postgres and renders a filterable table, with tag chips that deep-link into the source video.
+**Architecture:** Two independent folders in this repo: `backend/` (Next.js API-only app, Vercel-deployed) owns the Playwright scraper, the Postgres schema, the Sonnet5→Opus5 AI pipeline, and a `/api/insights` REST endpoint; `mobile/` (Expo/React Native app) calls that API and renders a filterable list with a tag-tap-to-detail flow. No video scraping, playback, or timestamp linking anywhere in this system.
 
-**Tech Stack:** TypeScript, Playwright (scraping), Next.js App Router + React (dashboard), Postgres via Vercel Marketplace (Neon), Drizzle ORM, Vercel AI Gateway + AI SDK (`anthropic/claude-opus-5`, `anthropic/claude-sonnet-5`), Vercel (hosting).
+**Tech Stack:** TypeScript throughout. Backend: Next.js App Router (API routes only), Playwright, Postgres via Vercel Marketplace (Neon), Drizzle ORM, Vercel AI Gateway + AI SDK (`anthropic/claude-opus-5`, `anthropic/claude-sonnet-5`), Vercel hosting. Mobile: Expo + Expo Router, React Native, EAS Build.
 
 ## Global Constraints
 
 - Target scope: 대수 = 제10대 only. Include all meeting categories reachable from the 영상회의록 menu (본회의 `plenary.do`, 시정질문 `question.do`, 상임위원회 4종 `standingC111/C222/C333`, 예산결산특별위원회 `standingE011`, 인사청문특별위원회 `standingG803`, 행정사무감사 `standingJ.do`) **except** 5분자유발언 (`free.do`), which must never be scraped or processed.
+- **No video anywhere.** Do not scrape video URLs, do not add video/timecode columns, do not build a video player or deep link. The scraper only ever collects meeting metadata and minutes text.
 - Two-model split is fixed: summarization + tag generation → `claude-sonnet-5`; the 5 insight scores (학습수준, 질의평점, 아이디어점수, 실행가능성, 거제영향도) → `claude-opus-5`. Never swap these.
 - All Anthropic model calls go through the **Vercel AI Gateway** using the AI SDK — no direct `@ai-sdk/anthropic` package, no raw `ANTHROPIC_API_KEY`. Model strings are plain `"anthropic/claude-sonnet-5"` / `"anthropic/claude-opus-5"`.
-- Gateway auth is **OIDC by default**: `vercel link` + `vercel env pull` provisions a `VERCEL_OIDC_TOKEN` automatically, which the `ai` package picks up with zero extra config. Do not manually generate an `AI_GATEWAY_API_KEY` unless OIDC is unavailable (e.g. running the pipeline off Vercel infra) — only fall back to a static gateway key in that case.
+- Gateway auth is **OIDC by default**: `vercel link` + `vercel env pull` provisions a `VERCEL_OIDC_TOKEN` automatically, which the `ai` package picks up with zero extra config. Do not manually generate an `AI_GATEWAY_API_KEY` unless OIDC is unavailable.
 - Rating scale for all 5 insight axes: integer 1–5.
-- This is a one-shot historical batch (no cron/scheduling in this plan). The pipeline must be safely re-runnable (idempotent upserts keyed on natural IDs from the source site) so it can be extended to periodic runs later without a rewrite.
+- This is a one-shot historical batch (no cron/scheduling in this plan). The pipeline must be safely re-runnable (idempotent upserts keyed on natural IDs from the source site).
 - Respect the source site: sequential requests with a 1–2s delay between page loads, no parallel hammering, honor robots.txt.
-- Data storage is Postgres (Vercel Marketplace / Neon) — not flat files — since the dashboard needs filtering/sorting.
+- Data storage is Postgres (Vercel Marketplace / Neon) via `@neondatabase/serverless` + `drizzle-orm/neon-http`, env var `DATABASE_URL`.
+- `backend/` and `mobile/` are separate npm projects (each with their own `package.json`), not a single merged app. The mobile app never imports backend code directly — it only calls the HTTP API.
 
 ---
 
 ## Context
 
-거제시의회 홈페이지(gjcl.go.kr)의 영상회의록 코너는 대수(제5대~제10대)와 회의 종류별로 회의 목록·회의록·영상을 제공하지만, 각 의원의 발언을 가로질러 비교하거나 발언의 질을 평가할 방법은 없다. 사용자는 제10대 회의(5분자유발언 제외)에 대해 의원별 발언을 Sonnet 5로 요약·태깅하고 Opus 5로 5가지 축(학습수준/질의평점/아이디어점수/실행가능성/거제영향도)의 AI 인사이트 평점을 매긴 뒤, 태그를 클릭하면 해당 발언 영상 지점으로 바로 이동하는 대시보드를 원한다. 목적은 시의회 활동에 대한 시민의 이해를 돕고, 의정활동의 질을 정량적으로 비교할 수 있게 하는 것이다.
+거제시의회 홈페이지(gjcl.go.kr)의 영상회의록 코너는 대수·회의 종류별로 회의 목록·회의록·영상을 제공하지만, 의원별 발언을 가로질러 비교하거나 발언의 질을 평가할 방법이 없다. 사용자는 제10대 회의(5분자유발언 제외)에 대해 의원별 발언(회의록 텍스트 기준)을 Sonnet 5로 요약·태깅하고 Opus 5로 5가지 축의 AI 인사이트 평점을 매긴 뒤, 이를 **모바일 앱**에서 확인할 수 있기를 원한다. 원래 계획했던 "태그 클릭 시 영상 이동" 기능은 완전히 폐기하고, 태그를 탭하면 해당 발언의 회의록 원문으로 이동하는 것으로 대체한다.
 
-사전 조사 결과, 사이트는 대수 드롭다운 + 회차 선택 폼으로 구성된 JS 동적 페이지이며 (`plenary.do` 등), 실제 회의 목록/회의록/영상 링크는 폼 제출 후에만 로드된다. 안건별 영상 타임코드가 실제로 존재하는지는 정적 페이지만으로 확인할 수 없었으므로, 구현 첫 단계에서 실제 브라우저 자동화로 이를 스파이크(조사)한다.
+사전 조사(v1 계획 수립 시) 결과, 사이트는 대수 드롭다운 + 회차 선택 폼으로 구성된 JS 동적 페이지이며, 실제 회의 목록/회의록 링크는 폼 제출 후에만 로드된다. 이번 버전은 회의록 **텍스트만** 수집하면 되므로, v1에서 필요했던 영상 플레이어 조사(타임코드 존재 여부 등)는 더 이상 필요 없다.
 
 ---
 
-## Phase 0 — Project Scaffolding & Environment
+## Phase 0 — Backend Scaffolding
 
-### Task 0.1: Initialize Next.js app with Vercel + Postgres + AI Gateway
+### Task 1: Initialize the backend Next.js API project with Postgres + AI Gateway
 
 **Files:**
-- Create: `package.json`, `next.config.ts`, `tsconfig.json`, `app/layout.tsx`, `app/page.tsx`
-- Create: `drizzle.config.ts`, `db/schema.ts`
-- Create: `.env.example`
-- Create: `vercel.ts`
+- Create: `backend/package.json`, `backend/next.config.ts`, `backend/tsconfig.json`
+- Create: `backend/drizzle.config.ts`, `backend/db/schema.ts`
+- Create: `backend/.env.example`
+- Create: `backend/vercel.ts`
 
 **Interfaces:**
-- Produces: `db` client export from `db/client.ts` used by every later task that touches Postgres.
+- Produces: `db` client export from `backend/db/client.ts` used by every later scraper/pipeline/API task.
 
-- [ ] **Step 1: Scaffold the Next.js app**
+- [ ] **Step 1: Scaffold the Next.js app (API-only)**
 
 ```bash
-npx create-next-app@latest gjcl-council-insights --typescript --app --eslint --tailwind --src-dir=false --import-alias "@/*" --yes
-cd gjcl-council-insights
+npx create-next-app@latest backend --typescript --app --eslint --no-tailwind --src-dir=false --import-alias "@/*" --yes
+cd backend
 ```
 
 - [ ] **Step 2: Install dependencies**
@@ -66,16 +69,16 @@ vercel integration add neon --yes --no-claim
 vercel env pull .env.local --yes
 ```
 
-If `vercel integration add neon` requires a dashboard/browser step to finish (connectable, not native), it will print a URL — stop and ask the human partner to complete it there, then re-run `vercel env pull .env.local --yes`. Confirm `DATABASE_URL` is present in `.env.local` before continuing.
+If `vercel integration add neon` requires a dashboard/browser step to finish, it will print a URL — stop and ask the human partner to complete it there, then re-run `vercel env pull .env.local --yes`. Confirm `DATABASE_URL` is present in `.env.local` before continuing.
 
 - [ ] **Step 4: Confirm AI Gateway auth (OIDC, no manual key)**
 
-`vercel env pull` also provisions `VERCEL_OIDC_TOKEN` in `.env.local` — this is what the `ai` package uses to authenticate through the AI Gateway automatically, with no `AI_GATEWAY_API_KEY` to generate. If AI Gateway is not yet enabled for the project, enable it once at `https://vercel.com/{team}/{project}/settings` → AI Gateway, then re-run `vercel env pull .env.local --yes`. Confirm `VERCEL_OIDC_TOKEN` is present in `.env.local`.
+`vercel env pull` also provisions `VERCEL_OIDC_TOKEN` in `.env.local`. If AI Gateway is not yet enabled for the project, enable it once at `https://vercel.com/{team}/{project}/settings` → AI Gateway, then re-run `vercel env pull .env.local --yes`. Confirm `VERCEL_OIDC_TOKEN` is present.
 
 - [ ] **Step 5: Write `drizzle.config.ts` and `.env.example`**
 
 ```typescript
-// drizzle.config.ts
+// backend/drizzle.config.ts
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
@@ -89,40 +92,39 @@ export default defineConfig({
 ```
 
 ```
-# .env.example
+# backend/.env.example
 DATABASE_URL=
 VERCEL_OIDC_TOKEN=
-# Only needed as a fallback if OIDC is unavailable (e.g. running the pipeline off Vercel infra):
+# Only needed as a fallback if OIDC is unavailable:
 # AI_GATEWAY_API_KEY=
 ```
 
 - [ ] **Step 6: Verify the dev server boots**
 
-Run: `npm run dev` and confirm `http://localhost:3000` renders the default page.
+Run: `npm run dev` (from `backend/`) and confirm `http://localhost:3000` responds (the default page is fine — this project is API-only, `app/page.tsx` will be replaced by nothing meaningful and can stay as the Next.js default).
 
 - [ ] **Step 7: Commit**
 
 ```bash
 git init
 git add -A
-git commit -m "chore: scaffold Next.js app with Postgres + AI Gateway wiring"
+git commit -m "chore: scaffold backend Next.js API project with Postgres + AI Gateway wiring"
 ```
 
-### Task 0.2: Define the database schema
+### Task 2: Define the database schema (no video columns)
 
 **Files:**
-- Create: `db/schema.ts`
-- Create: `db/client.ts`
-- Test: `db/schema.sql` (generated, checked in for review)
+- Create: `backend/db/schema.ts`
+- Create: `backend/db/client.ts`
 
 **Interfaces:**
-- Produces: Drizzle table objects `meetings`, `members`, `agendaItems`, `statements`, `statementInsights` — every later scraper/pipeline/dashboard task imports these exact names from `db/schema.ts`.
+- Produces: Drizzle table objects `meetings`, `members`, `agendaItems`, `statements`, `statementInsights` — every later scraper/pipeline/API task imports these exact names from `backend/db/schema.ts`.
 
 - [ ] **Step 1: Write the schema**
 
 ```typescript
-// db/schema.ts
-import { pgTable, serial, text, integer, timestamp, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+// backend/db/schema.ts
+import { pgTable, serial, text, integer, timestamp, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const meetings = pgTable("meetings", {
   id: serial("id").primaryKey(),
@@ -134,7 +136,6 @@ export const meetings = pgTable("meetings", {
   sessionNo: text("session_no"), // "제1차"
   meetingDate: text("meeting_date"), // ISO date string, nullable if unknown
   sourceUrl: text("source_url").notNull(),
-  videoUrl: text("video_url"),
   scrapedAt: timestamp("scraped_at").notNull().defaultNow(),
 }, (t) => ({
   uniqSource: uniqueIndex("meetings_source_meeting_id_idx").on(t.sourceMeetingId),
@@ -153,7 +154,6 @@ export const agendaItems = pgTable("agenda_items", {
   meetingId: integer("meeting_id").notNull().references(() => meetings.id),
   title: text("title").notNull(),
   orderInMeeting: integer("order_in_meeting").notNull(),
-  videoTimecodeSeconds: integer("video_timecode_seconds"), // null if not discoverable
 });
 
 export const statements = pgTable("statements", {
@@ -185,7 +185,7 @@ export const statementInsights = pgTable("statement_insights", {
 ```
 
 ```typescript
-// db/client.ts
+// backend/db/client.ts
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import * as schema from "./schema";
@@ -196,48 +196,40 @@ export const db = drizzle(sql, { schema });
 
 - [ ] **Step 2: Generate and review the SQL migration**
 
-```bash
-npx drizzle-kit generate
-```
-
-Read the generated SQL under `drizzle/` to confirm the 5 tables and constraints match the schema above.
+Run: `npx drizzle-kit generate` (from `backend/`). Read the generated SQL under `backend/drizzle/` to confirm the 5 tables and constraints match the schema above, and that no video-related column exists.
 
 - [ ] **Step 3: Apply the migration**
 
-```bash
-npx drizzle-kit migrate
-```
+Run: `npx drizzle-kit migrate`
 
 - [ ] **Step 4: Verify tables exist**
 
-Run: `npx drizzle-kit studio` (or a one-off `SELECT table_name FROM information_schema.tables WHERE table_schema='public';`) and confirm all 5 tables are present.
+Run: `npx drizzle-kit studio` (or a one-off `SELECT table_name FROM information_schema.tables WHERE table_schema='public';`) and confirm all 5 tables are present with no video columns.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add db drizzle.config.ts drizzle
-git commit -m "feat: add Postgres schema for meetings, members, statements, insights"
+git commit -m "feat: add Postgres schema for meetings, members, statements, insights (no video)"
 ```
 
 ---
 
-## Phase 1 — Site Investigation Spike
+## Phase 1 — Site Investigation Spike (minutes text only)
 
-This phase produces **findings**, not a fixed API — the exact form-submission and video-player mechanics are unknown until inspected live. Do not skip it; Phase 2's scraper selectors depend on its output.
-
-### Task 1.1: Inspect the meeting-list and minutes flow with Playwright
+### Task 3: Inspect the meeting-list and minutes flow with Playwright
 
 **Files:**
-- Create: `scripts/spike/inspect-site.ts`
-- Create: `scripts/spike/findings.md` (output of this task — not a placeholder, a real recorded artifact)
+- Create: `backend/scripts/spike/inspect-site.ts`
+- Create: `backend/scripts/spike/findings.md`
 
 **Interfaces:**
-- Produces: `scripts/spike/findings.md`, which Phase 2 tasks (2.1–2.3) read before writing selectors.
+- Produces: `backend/scripts/spike/findings.md`, which Phase 2 tasks (4–5) read before writing selectors.
 
 - [ ] **Step 1: Write an interactive inspection script**
 
 ```typescript
-// scripts/spike/inspect-site.ts
+// backend/scripts/spike/inspect-site.ts
 import { chromium } from "playwright";
 
 async function main() {
@@ -245,9 +237,6 @@ async function main() {
   const page = await browser.newPage();
 
   await page.goto("https://www.gjcl.go.kr/kr/cast/plenary.do");
-  // Select 제10대 in the 대수 dropdown and submit the form.
-  // Selector names are unknown ahead of time - use page.locator with
-  // role/label queries and log outerHTML of the form to find them.
   console.log(await page.locator("form").first().evaluate(el => el.outerHTML));
 
   page.on("request", (req) => {
@@ -256,7 +245,7 @@ async function main() {
     }
   });
 
-  await page.waitForTimeout(120000); // hold the browser open for manual interaction while requests are logged
+  await page.waitForTimeout(120000);
   await browser.close();
 }
 
@@ -265,46 +254,43 @@ main();
 
 - [ ] **Step 2: Run it and manually drive the form**
 
-Run: `npx tsx scripts/spike/inspect-site.ts`
+Run: `npx tsx scripts/spike/inspect-site.ts` (from `backend/`).
 
-While it's open, manually: select 제10대, pick a 회차, open one meeting's detail/minutes view, open its video, and try clicking any per-안건 "재생" or "바로가기" control if one exists. Watch the logged `REQUEST` lines and the DOM.
+While it's open, manually: select 제10대, pick a 회차, open one meeting's detail/minutes view. Watch the logged `REQUEST` lines and the DOM. **Do not** investigate the video player — it is out of scope for this version.
 
 - [ ] **Step 3: Record findings**
 
-Write `scripts/spike/findings.md` documenting, with concrete examples (real URLs/params captured from Step 2):
+Write `backend/scripts/spike/findings.md` documenting, with concrete examples (real URLs/params captured from Step 2):
 - The exact request (method + URL + form params) that lists meetings for 제10대 + a given category.
 - Whether meeting detail/minutes text is server-rendered HTML, a separate AJAX/JSON endpoint, or a downloadable file (PDF/HWP).
-- The video player's embed mechanism (iframe src pattern, video file URL, or third-party VOD player) and whether it exposes per-agenda-item timecodes anywhere in the DOM or network calls.
 - Whether minutes text is attributed per-speaker in a parseable way (e.g., `<b>홍길동 의원</b>` markers) or is unstructured prose.
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add scripts/spike
-git commit -m "docs: record gjcl.go.kr scraping findings from live inspection"
+git commit -m "docs: record gjcl.go.kr meeting-list and minutes-text findings"
 ```
-
-**Decision gate:** Based on findings.md, Task 2.3 (video timecode extraction) either implements exact-timecode extraction (if the site exposes it) or implements the approved fallback: link to the meeting's video page only. Do not block the rest of the plan on this — proceed with whichever branch the findings support.
 
 ---
 
-## Phase 2 — Scraper
+## Phase 2 — Scraper (meeting list + minutes text, no video)
 
-### Task 2.1: Scrape the 제10대 meeting list (all categories except 5분자유발언)
+### Task 4: Scrape the 제10대 meeting list (all categories except 5분자유발언)
 
 **Files:**
-- Create: `scripts/scrape/categories.ts`
-- Create: `scripts/scrape/meetingList.ts`
-- Test: `scripts/scrape/meetingList.test.ts`
+- Create: `backend/scripts/scrape/categories.ts`
+- Create: `backend/scripts/scrape/meetingList.ts`
+- Test: `backend/scripts/scrape/meetingList.test.ts`
 
 **Interfaces:**
-- Consumes: URL/param patterns recorded in `scripts/spike/findings.md`.
-- Produces: `scrapeMeetingList(category: CouncilCategory): Promise<ScrapedMeeting[]>` where `ScrapedMeeting = { sourceMeetingId: string; category: string; title: string; sessionRound: string; sessionNo: string; meetingDate: string | null; sourceUrl: string }`. Task 2.4 imports this function and type.
+- Consumes: URL/param patterns recorded in `backend/scripts/spike/findings.md`.
+- Produces: `scrapeMeetingList(category: CouncilCategory): Promise<ScrapedMeeting[]>` where `ScrapedMeeting = { sourceMeetingId: string; category: string; title: string; sessionRound: string; sessionNo: string; meetingDate: string | null; sourceUrl: string }`. Task 6 imports this function and type.
 
 - [ ] **Step 1: Define the category list, excluding 5분자유발언**
 
 ```typescript
-// scripts/scrape/categories.ts
+// backend/scripts/scrape/categories.ts
 export const COUNCIL_CATEGORIES = [
   { key: "본회의", path: "/kr/cast/plenary.do" },
   { key: "시정질문", path: "/kr/cast/question.do" },
@@ -322,10 +308,10 @@ export type CouncilCategory = typeof COUNCIL_CATEGORIES[number]["key"];
 
 - [ ] **Step 2: Write a failing test with a fixture**
 
-Save one real captured HTML response (from Task 1.1) as `scripts/scrape/__fixtures__/plenary-list-10th.html`.
+Save one real captured HTML response (from Task 3) as `backend/scripts/scrape/__fixtures__/plenary-list-10th.html`.
 
 ```typescript
-// scripts/scrape/meetingList.test.ts
+// backend/scripts/scrape/meetingList.test.ts
 import { test, expect } from "vitest";
 import fs from "node:fs";
 import { parseMeetingListHtml } from "./meetingList";
@@ -347,7 +333,7 @@ Expected: FAIL — `parseMeetingListHtml` is not defined.
 - [ ] **Step 4: Implement the scraper using the real selectors from Phase 1 findings**
 
 ```typescript
-// scripts/scrape/meetingList.ts
+// backend/scripts/scrape/meetingList.ts
 import { chromium } from "playwright";
 import * as cheerio from "cheerio";
 import type { CouncilCategory } from "./categories";
@@ -363,9 +349,8 @@ export interface ScrapedMeeting {
   sourceUrl: string;
 }
 
-// Selector/param details below are filled in from scripts/spike/findings.md
-// once Phase 1 is complete - this is the single source of truth for the
-// site's actual DOM structure, not guessed markup.
+// Selector/param details below are filled in from backend/scripts/spike/findings.md
+// once Phase 1 is complete.
 export function parseMeetingListHtml(html: string, category: CouncilCategory): ScrapedMeeting[] {
   const $ = cheerio.load(html);
   const rows: ScrapedMeeting[] = [];
@@ -394,7 +379,6 @@ export async function scrapeMeetingList(category: CouncilCategory): Promise<Scra
   const browser = await chromium.launch();
   const page = await browser.newPage();
   await page.goto(`https://www.gjcl.go.kr${def.path}`);
-  // Select 제10대 and submit - exact selector filled in from findings.md
   await page.selectOption("select[name='daesu']", { label: "제10대" });
   await page.click("button[type='submit']");
   await page.waitForLoadState("networkidle");
@@ -416,22 +400,22 @@ git add scripts/scrape/categories.ts scripts/scrape/meetingList.ts scripts/scrap
 git commit -m "feat: scrape 제10대 meeting list for all non-5분자유발언 categories"
 ```
 
-### Task 2.2: Scrape per-speaker statement text from meeting minutes
+### Task 5: Scrape per-speaker statement text from meeting minutes
 
 **Files:**
-- Create: `scripts/scrape/minutes.ts`
-- Test: `scripts/scrape/minutes.test.ts`
+- Create: `backend/scripts/scrape/minutes.ts`
+- Test: `backend/scripts/scrape/minutes.test.ts`
 
 **Interfaces:**
-- Consumes: `ScrapedMeeting.sourceUrl` (Task 2.1).
-- Produces: `scrapeMinutes(meetingUrl: string): Promise<ScrapedStatement[]>` where `ScrapedStatement = { memberName: string; agendaTitle: string | null; orderInMeeting: number; rawText: string }`. Task 2.4 imports this.
+- Consumes: `ScrapedMeeting.sourceUrl` (Task 4).
+- Produces: `scrapeMinutes(meetingUrl: string): Promise<ScrapedStatement[]>` where `ScrapedStatement = { memberName: string; agendaTitle: string | null; orderInMeeting: number; rawText: string }`. Task 6 imports this.
 
 - [ ] **Step 1: Save a fixture and write a failing test**
 
-Save one real minutes page as `scripts/scrape/__fixtures__/minutes-sample.html` (captured in Phase 1).
+Save one real minutes page as `backend/scripts/scrape/__fixtures__/minutes-sample.html` (captured in Phase 1).
 
 ```typescript
-// scripts/scrape/minutes.test.ts
+// backend/scripts/scrape/minutes.test.ts
 import { test, expect } from "vitest";
 import fs from "node:fs";
 import { parseMinutesHtml } from "./minutes";
@@ -453,7 +437,7 @@ Expected: FAIL — `parseMinutesHtml` is not defined.
 - [ ] **Step 3: Implement using the real speaker-marker pattern from findings.md**
 
 ```typescript
-// scripts/scrape/minutes.ts
+// backend/scripts/scrape/minutes.ts
 import { chromium } from "playwright";
 import * as cheerio from "cheerio";
 
@@ -512,105 +496,25 @@ git add scripts/scrape/minutes.ts scripts/scrape/minutes.test.ts scripts/scrape/
 git commit -m "feat: parse per-speaker statements from meeting minutes"
 ```
 
-### Task 2.3: Resolve video URL + timecode per agenda item (exact if available, page-level fallback otherwise)
+### Task 6: Orchestrate the full scrape and upsert into Postgres
 
 **Files:**
-- Create: `scripts/scrape/video.ts`
-- Test: `scripts/scrape/video.test.ts`
+- Create: `backend/scripts/scrape/run.ts`
 
 **Interfaces:**
-- Consumes: `ScrapedMeeting` (Task 2.1) and its list of agenda titles (from Task 2.2's `agendaTitle` values).
-- Produces: `resolveVideo(meeting: ScrapedMeeting, agendaTitles: string[]): Promise<{ videoUrl: string | null; timecodesByAgenda: Record<string, number | null> }>`. Task 2.4 imports this.
-
-- [ ] **Step 1: Write the test for the fallback branch (exact-timecode branch depends on Phase 1 findings — implement whichever the findings support, but the fallback must always work)**
-
-```typescript
-// scripts/scrape/video.test.ts
-import { test, expect } from "vitest";
-import { buildFallbackVideoResult } from "./video";
-
-test("falls back to page-level video link when no timecodes are discoverable", () => {
-  const result = buildFallbackVideoResult("https://www.gjcl.go.kr/kr/cast/detail.do?id=264-1", ["안건1", "안건2"]);
-  expect(result.videoUrl).toBe("https://www.gjcl.go.kr/kr/cast/detail.do?id=264-1");
-  expect(result.timecodesByAgenda["안건1"]).toBeNull();
-  expect(result.timecodesByAgenda["안건2"]).toBeNull();
-});
-```
-
-- [ ] **Step 2: Run to confirm it fails**
-
-Run: `npx vitest run scripts/scrape/video.test.ts`
-Expected: FAIL — `buildFallbackVideoResult` is not defined.
-
-- [ ] **Step 3: Implement both branches**
-
-```typescript
-// scripts/scrape/video.ts
-import { chromium } from "playwright";
-import type { ScrapedMeeting } from "./meetingList";
-
-export interface VideoResolution {
-  videoUrl: string | null;
-  timecodesByAgenda: Record<string, number | null>;
-}
-
-export function buildFallbackVideoResult(videoUrl: string | null, agendaTitles: string[]): VideoResolution {
-  const timecodesByAgenda: Record<string, number | null> = {};
-  for (const title of agendaTitles) timecodesByAgenda[title] = null;
-  return { videoUrl, timecodesByAgenda };
-}
-
-export async function resolveVideo(meeting: ScrapedMeeting, agendaTitles: string[]): Promise<VideoResolution> {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto(meeting.sourceUrl);
-  await page.waitForLoadState("networkidle");
-
-  const videoUrl = await page.locator("video, iframe.video-player").first().getAttribute("src").catch(() => null);
-
-  // If findings.md confirmed per-agenda timecode buttons exist, parse them here
-  // e.g.: const buttons = await page.locator(".agenda-jump-btn").all(); ... map title -> seconds
-  // Until/unless that's confirmed, every agenda gets a null timecode and the
-  // dashboard falls back to linking the bare video page (approved behavior).
-  const result = buildFallbackVideoResult(videoUrl, agendaTitles);
-
-  await browser.close();
-  return result;
-}
-```
-
-- [ ] **Step 4: Run to confirm it passes**
-
-Run: `npx vitest run scripts/scrape/video.test.ts`
-Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add scripts/scrape/video.ts scripts/scrape/video.test.ts
-git commit -m "feat: resolve meeting video URL with per-agenda timecode fallback"
-```
-
-### Task 2.4: Orchestrate the full scrape and upsert into Postgres
-
-**Files:**
-- Create: `scripts/scrape/run.ts`
-
-**Interfaces:**
-- Consumes: `scrapeMeetingList` (2.1), `scrapeMinutes` (2.2), `resolveVideo` (2.3), `db`/`meetings`/`members`/`agendaItems`/`statements` (Task 0.2).
+- Consumes: `scrapeMeetingList` (4), `scrapeMinutes` (5), `db`/`meetings`/`members`/`agendaItems`/`statements` (Task 2).
 - Produces: populated `meetings`, `members`, `agendaItems`, `statements` tables — Phase 3 reads these.
 
 - [ ] **Step 1: Write the orchestration script**
 
 ```typescript
-// scripts/scrape/run.ts
+// backend/scripts/scrape/run.ts
 import { db } from "@/db/client";
 import { meetings, members, agendaItems, statements } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { COUNCIL_CATEGORIES } from "./categories";
 import { scrapeMeetingList } from "./meetingList";
 import { scrapeMinutes } from "./minutes";
-import { resolveVideo } from "./video";
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -639,22 +543,12 @@ async function run() {
 
       const scrapedStatements = await scrapeMinutes(m.sourceUrl);
       const agendaTitles = [...new Set(scrapedStatements.map((s) => s.agendaTitle).filter((t): t is string => !!t))];
-      const video = await resolveVideo({ ...m }, agendaTitles);
-
-      if (video.videoUrl) {
-        await db.update(meetings).set({ videoUrl: video.videoUrl }).where(eq(meetings.id, meetingRow.id));
-      }
 
       const agendaIdByTitle = new Map<string, number>();
       for (const [i, title] of agendaTitles.entries()) {
         const [row] = await db
           .insert(agendaItems)
-          .values({
-            meetingId: meetingRow.id,
-            title,
-            orderInMeeting: i,
-            videoTimecodeSeconds: video.timecodesByAgenda[title] ?? null,
-          })
+          .values({ meetingId: meetingRow.id, title, orderInMeeting: i })
           .returning();
         agendaIdByTitle.set(title, row.id);
       }
@@ -688,7 +582,7 @@ run().then(() => process.exit(0));
 
 - [ ] **Step 2: Run against a single category first to validate end-to-end**
 
-Temporarily filter `COUNCIL_CATEGORIES` to `["본회의"]` and run: `npx tsx scripts/scrape/run.ts`
+Temporarily filter `COUNCIL_CATEGORIES` to `["본회의"]` and run: `npx tsx scripts/scrape/run.ts` (from `backend/`).
 Expected: rows appear in `meetings`, `members`, `agendaItems`, `statements` — spot-check with `npx drizzle-kit studio`.
 
 - [ ] **Step 3: Run the full scrape across all categories**
@@ -699,27 +593,27 @@ Restore the full category list and run: `npx tsx scripts/scrape/run.ts`
 
 ```bash
 git add scripts/scrape/run.ts
-git commit -m "feat: orchestrate full 제10대 scrape into Postgres"
+git commit -m "feat: orchestrate full 제10대 scrape into Postgres (no video)"
 ```
 
 ---
 
 ## Phase 3 — AI Pipeline (Sonnet 5 → Opus 5)
 
-### Task 3.1: Sonnet 5 summarization + tagging stage
+### Task 7: Sonnet 5 summarization + tagging stage
 
 **Files:**
-- Create: `lib/ai/summarize.ts`
-- Test: `lib/ai/summarize.test.ts`
+- Create: `backend/lib/ai/summarize.ts`
+- Test: `backend/lib/ai/summarize.test.ts`
 
 **Interfaces:**
-- Consumes: `Statement.rawText` (from `db/schema.ts`).
-- Produces: `summarizeStatement(rawText: string): Promise<{ summary: string; tags: string[] }>`. Task 3.3 imports this.
+- Consumes: `Statement.rawText` (from `backend/db/schema.ts`).
+- Produces: `summarizeStatement(rawText: string): Promise<{ summary: string; tags: string[] }>`. Task 9 imports this.
 
 - [ ] **Step 1: Write a failing test with a mocked gateway call**
 
 ```typescript
-// lib/ai/summarize.test.ts
+// backend/lib/ai/summarize.test.ts
 import { test, expect, vi } from "vitest";
 import { generateObject } from "ai";
 import { summarizeStatement } from "./summarize";
@@ -745,7 +639,7 @@ Expected: FAIL — `summarizeStatement` is not defined.
 - [ ] **Step 3: Implement**
 
 ```typescript
-// lib/ai/summarize.ts
+// backend/lib/ai/summarize.ts
 import { generateObject } from "ai";
 import { z } from "zod";
 
@@ -776,20 +670,20 @@ git add lib/ai/summarize.ts lib/ai/summarize.test.ts
 git commit -m "feat: add Sonnet 5 statement summarization and tagging"
 ```
 
-### Task 3.2: Opus 5 insight-scoring stage
+### Task 8: Opus 5 insight-scoring stage
 
 **Files:**
-- Create: `lib/ai/score.ts`
-- Test: `lib/ai/score.test.ts`
+- Create: `backend/lib/ai/score.ts`
+- Test: `backend/lib/ai/score.test.ts`
 
 **Interfaces:**
-- Consumes: `Statement.rawText` + `summarizeStatement` output (Task 3.1).
-- Produces: `scoreStatement(rawText: string, summary: string): Promise<InsightScores>` where `InsightScores = { learningLevel: number; questionScore: number; ideaScore: number; feasibilityScore: number; geojeImpactScore: number; rationale: string }`. Task 3.3 imports this.
+- Consumes: `Statement.rawText` + `summarizeStatement` output (Task 7).
+- Produces: `scoreStatement(rawText: string, summary: string): Promise<InsightScores>` where `InsightScores = { learningLevel: number; questionScore: number; ideaScore: number; feasibilityScore: number; geojeImpactScore: number; rationale: string }`. Task 9 imports this.
 
 - [ ] **Step 1: Write a failing test**
 
 ```typescript
-// lib/ai/score.test.ts
+// backend/lib/ai/score.test.ts
 import { test, expect, vi } from "vitest";
 import { generateObject } from "ai";
 import { scoreStatement } from "./score";
@@ -823,7 +717,7 @@ Expected: FAIL — `scoreStatement` is not defined.
 - [ ] **Step 3: Implement with an explicit rubric in the prompt**
 
 ```typescript
-// lib/ai/score.ts
+// backend/lib/ai/score.ts
 import { generateObject } from "ai";
 import { z } from "zod";
 
@@ -878,22 +772,22 @@ git add lib/ai/score.ts lib/ai/score.test.ts
 git commit -m "feat: add Opus 5 5-axis insight scoring with explicit rubric"
 ```
 
-### Task 3.3: Batch pipeline runner with retry and idempotency
+### Task 9: Batch pipeline runner with retry and idempotency
 
 **Files:**
-- Create: `scripts/pipeline/run.ts`
+- Create: `backend/scripts/pipeline/run.ts`
 
 **Interfaces:**
-- Consumes: `summarizeStatement` (3.1), `scoreStatement` (3.2), `db`/`statements`/`statementInsights` (0.2).
-- Produces: populated `statementInsights` table — Phase 4 dashboard reads this directly.
+- Consumes: `summarizeStatement` (7), `scoreStatement` (8), `db`/`statements`/`statementInsights` (Task 2).
+- Produces: populated `statementInsights` table — the API (Task 10) reads this directly.
 
 - [ ] **Step 1: Write the runner with per-statement retry and failure logging**
 
 ```typescript
-// scripts/pipeline/run.ts
+// backend/scripts/pipeline/run.ts
 import { db } from "@/db/client";
 import { statements, statementInsights } from "@/db/schema";
-import { eq, notInArray, isNull } from "drizzle-orm";
+import { notInArray } from "drizzle-orm";
 import { summarizeStatement } from "@/lib/ai/summarize";
 import { scoreStatement } from "@/lib/ai/score";
 
@@ -956,7 +850,7 @@ run().then(() => process.exit(0));
 
 - [ ] **Step 2: Run against a small subset to validate cost/quality before full run**
 
-Temporarily add `.limit(10)` to the `pending` query, run: `npx tsx scripts/pipeline/run.ts`, and manually review the 10 rows in `statementInsights` via `npx drizzle-kit studio` for rubric sanity (do scores 1-5 look reasonable relative to the summary?).
+Temporarily add `.limit(10)` to the `pending` query, run: `npx tsx scripts/pipeline/run.ts`, and manually review the 10 rows in `statementInsights` via `npx drizzle-kit studio` for rubric sanity.
 
 - [ ] **Step 3: Remove the limit and run the full batch**
 
@@ -971,23 +865,73 @@ git commit -m "feat: run Sonnet5+Opus5 insight pipeline over all scraped stateme
 
 ---
 
-## Phase 4 — Dashboard (Next.js on Vercel)
+## Phase 4 — Backend API
 
-### Task 4.1: Data-fetching query layer
+### Task 10: `/api/insights` endpoint
 
 **Files:**
-- Create: `lib/queries/insights.ts`
+- Create: `backend/app/api/insights/route.ts`
+- Test: `backend/app/api/insights/route.test.ts`
 
 **Interfaces:**
-- Consumes: `db`, all 5 tables (0.2).
-- Produces: `getInsightRows(filters?: InsightFilters): Promise<InsightRow[]>` where `InsightRow` includes meeting title, member name, tags, all 5 scores, and video jump info. Task 4.2 imports this.
+- Consumes: `db`, all 5 tables (Task 2).
+- Produces: `GET /api/insights` (optional query params `member`, `meeting`, `minGeojeImpact`) returning `InsightRow[]` JSON, where `InsightRow = { statementId: number; meetingTitle: string; memberName: string; tags: string[]; learningLevel: number; questionScore: number; ideaScore: number; feasibilityScore: number; geojeImpactScore: number; summary: string; rawText: string; rationale: string }`. The mobile app (Tasks 12–14) consumes this response shape exactly.
 
-- [ ] **Step 1: Implement the joined query**
+- [ ] **Step 1: Write the joined query as a plain function, with a failing test**
 
 ```typescript
-// lib/queries/insights.ts
+// backend/lib/queries/insights.test.ts
+import { test, expect, vi } from "vitest";
+import { getInsightRows } from "./insights";
+
+vi.mock("@/db/client", () => ({
+  db: {
+    select: () => ({
+      from: () => ({
+        innerJoin: () => ({
+          innerJoin: () => ({
+            innerJoin: () => Promise.resolve([
+              {
+                statementId: 1,
+                meetingTitle: "제264회 임시회 제1차 본회의",
+                memberName: "홍길동",
+                tags: ["재해예방"],
+                learningLevel: 4,
+                questionScore: 3,
+                ideaScore: 5,
+                feasibilityScore: 3,
+                geojeImpactScore: 4,
+                summary: "요약",
+                rawText: "원문",
+                rationale: "근거",
+              },
+            ]),
+          }),
+        }),
+      }),
+    }),
+  },
+}));
+
+test("getInsightRows returns joined rows shaped for the API", async () => {
+  const rows = await getInsightRows();
+  expect(rows).toHaveLength(1);
+  expect(rows[0].memberName).toBe("홍길동");
+  expect(rows[0].tags).toEqual(["재해예방"]);
+});
+```
+
+- [ ] **Step 2: Run to confirm it fails**
+
+Run: `npx vitest run lib/queries/insights.test.ts`
+Expected: FAIL — `getInsightRows` is not defined.
+
+- [ ] **Step 3: Implement the query function**
+
+```typescript
+// backend/lib/queries/insights.ts
 import { db } from "@/db/client";
-import { meetings, members, agendaItems, statements, statementInsights } from "@/db/schema";
+import { meetings, members, statements, statementInsights } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export interface InsightRow {
@@ -1001,13 +945,12 @@ export interface InsightRow {
   feasibilityScore: number;
   geojeImpactScore: number;
   summary: string;
+  rawText: string;
   rationale: string;
-  videoUrl: string | null;
-  videoTimecodeSeconds: number | null;
 }
 
 export async function getInsightRows(): Promise<InsightRow[]> {
-  const rows = await db
+  return db
     .select({
       statementId: statements.id,
       meetingTitle: meetings.title,
@@ -1019,246 +962,508 @@ export async function getInsightRows(): Promise<InsightRow[]> {
       feasibilityScore: statementInsights.feasibilityScore,
       geojeImpactScore: statementInsights.geojeImpactScore,
       summary: statementInsights.summary,
+      rawText: statements.rawText,
       rationale: statementInsights.rationale,
-      videoUrl: meetings.videoUrl,
-      videoTimecodeSeconds: agendaItems.videoTimecodeSeconds,
     })
     .from(statementInsights)
     .innerJoin(statements, eq(statementInsights.statementId, statements.id))
     .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-    .innerJoin(members, eq(statements.memberId, members.id))
-    .leftJoin(agendaItems, eq(statements.agendaItemId, agendaItems.id));
-
-  return rows;
+    .innerJoin(members, eq(statements.memberId, members.id));
 }
 ```
 
-- [ ] **Step 2: Verify manually**
+- [ ] **Step 4: Run to confirm it passes**
 
-Add a temporary `console.log((await getInsightRows()).length)` invoked from a scratch script (`npx tsx -e "..."`) and confirm it returns the expected row count (matches `statementInsights` table row count).
+Run: `npx vitest run lib/queries/insights.test.ts`
+Expected: PASS
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 5: Wire the route handler with query-param filtering**
+
+```typescript
+// backend/app/api/insights/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { getInsightRows } from "@/lib/queries/insights";
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const member = searchParams.get("member");
+  const meeting = searchParams.get("meeting");
+  const minGeojeImpact = Number(searchParams.get("minGeojeImpact") ?? "1");
+
+  const rows = await getInsightRows();
+  const filtered = rows.filter(
+    (r) =>
+      (!member || r.memberName === member) &&
+      (!meeting || r.meetingTitle === meeting) &&
+      r.geojeImpactScore >= minGeojeImpact
+  );
+
+  return NextResponse.json(filtered);
+}
+```
+
+- [ ] **Step 6: Verify manually**
+
+Run: `npm run dev` (from `backend/`), then `curl http://localhost:3000/api/insights` and confirm a JSON array matching `InsightRow[]` is returned. Try `curl "http://localhost:3000/api/insights?minGeojeImpact=4"` and confirm filtering works.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add lib/queries/insights.ts
-git commit -m "feat: add joined query layer for the insights dashboard"
+git add lib/queries/insights.ts lib/queries/insights.test.ts app/api/insights/route.ts
+git commit -m "feat: add /api/insights endpoint with member/meeting/score filters"
 ```
 
-### Task 4.2: Insights table page with tag-click video jump
+---
+
+## Phase 5 — Mobile App (Expo)
+
+### Task 11: Initialize the Expo app and point it at the backend API
 
 **Files:**
-- Create: `app/page.tsx`
-- Create: `components/InsightsTable.tsx`
-- Create: `components/TagChip.tsx`
+- Create: `mobile/package.json`, `mobile/app.json`, `mobile/tsconfig.json`
+- Create: `mobile/app/_layout.tsx`
+- Create: `mobile/lib/api.ts`
+- Create: `mobile/.env.example`
 
 **Interfaces:**
-- Consumes: `getInsightRows` (4.1).
-- Produces: the rendered dashboard — this is the final user-facing deliverable, no downstream tasks depend on it besides QA (Phase 5).
+- Produces: `fetchInsights(filters?: { member?: string; meeting?: string; minGeojeImpact?: number }): Promise<InsightRow[]>` from `mobile/lib/api.ts` — Task 12 imports this. Also produces the local type `InsightRow` (mirrors `backend`'s `InsightRow` shape; mobile does not import backend code, so this type is duplicated here intentionally).
 
-- [ ] **Step 1: Build the tag chip that opens the video at the right point**
+- [ ] **Step 1: Scaffold the Expo app**
 
-```tsx
-// components/TagChip.tsx
-"use client";
+```bash
+npx create-expo-app@latest mobile --template default --yes
+cd mobile
+npx expo install expo-router react-native-safe-area-context react-native-screens
+```
 
-export function TagChip({
-  tag,
-  videoUrl,
-  timecodeSeconds,
-}: {
-  tag: string;
-  videoUrl: string | null;
-  timecodeSeconds: number | null;
-}) {
-  function handleClick() {
-    if (!videoUrl) return;
-    const url = timecodeSeconds != null ? `${videoUrl}#t=${timecodeSeconds}s` : videoUrl;
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
+- [ ] **Step 2: Configure the API base URL**
 
-  return (
-    <button
-      onClick={handleClick}
-      disabled={!videoUrl}
-      className="inline-block rounded-full bg-blue-100 px-2 py-1 text-sm text-blue-800 hover:bg-blue-200 disabled:opacity-50"
-      title={videoUrl ? "클릭하면 해당 발언 영상으로 이동합니다" : "영상 링크 없음"}
-    >
-      {tag}
-    </button>
-  );
+```
+# mobile/.env.example
+EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
+```
+
+- [ ] **Step 3: Write the typed API client**
+
+```typescript
+// mobile/lib/api.ts
+export interface InsightRow {
+  statementId: number;
+  meetingTitle: string;
+  memberName: string;
+  tags: string[];
+  learningLevel: number;
+  questionScore: number;
+  ideaScore: number;
+  feasibilityScore: number;
+  geojeImpactScore: number;
+  summary: string;
+  rawText: string;
+  rationale: string;
+}
+
+export interface InsightFilters {
+  member?: string;
+  meeting?: string;
+  minGeojeImpact?: number;
+}
+
+export async function fetchInsights(filters: InsightFilters = {}): Promise<InsightRow[]> {
+  const base = process.env.EXPO_PUBLIC_API_BASE_URL;
+  const params = new URLSearchParams();
+  if (filters.member) params.set("member", filters.member);
+  if (filters.meeting) params.set("meeting", filters.meeting);
+  if (filters.minGeojeImpact) params.set("minGeojeImpact", String(filters.minGeojeImpact));
+
+  const res = await fetch(`${base}/api/insights?${params.toString()}`);
+  if (!res.ok) throw new Error(`Failed to fetch insights: ${res.status}`);
+  return res.json();
 }
 ```
 
-- [ ] **Step 2: Build the table component**
+- [ ] **Step 4: Verify the app boots**
 
-```tsx
-// components/InsightsTable.tsx
-import type { InsightRow } from "@/lib/queries/insights";
-import { TagChip } from "./TagChip";
-
-export function InsightsTable({ rows }: { rows: InsightRow[] }) {
-  return (
-    <table className="w-full border-collapse text-sm">
-      <thead>
-        <tr className="border-b text-left">
-          <th className="p-2">회의 제목</th>
-          <th className="p-2">의원명</th>
-          <th className="p-2">주요발언 태그</th>
-          <th className="p-2">학습수준</th>
-          <th className="p-2">질의평점</th>
-          <th className="p-2">아이디어점수</th>
-          <th className="p-2">실행가능성</th>
-          <th className="p-2">거제영향도</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.statementId} className="border-b align-top">
-            <td className="p-2">{row.meetingTitle}</td>
-            <td className="p-2">{row.memberName}</td>
-            <td className="p-2 space-x-1">
-              {row.tags.map((tag) => (
-                <TagChip key={tag} tag={tag} videoUrl={row.videoUrl} timecodeSeconds={row.videoTimecodeSeconds} />
-              ))}
-            </td>
-            <td className="p-2">{row.learningLevel}</td>
-            <td className="p-2">{row.questionScore}</td>
-            <td className="p-2">{row.ideaScore}</td>
-            <td className="p-2">{row.feasibilityScore}</td>
-            <td className="p-2">{row.geojeImpactScore}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-```
-
-- [ ] **Step 3: Wire the server component page**
-
-```tsx
-// app/page.tsx
-import { getInsightRows } from "@/lib/queries/insights";
-import { InsightsTable } from "@/components/InsightsTable";
-
-export default async function Page() {
-  const rows = await getInsightRows();
-  return (
-    <main className="p-6">
-      <h1 className="mb-4 text-xl font-bold">거제시의회 제10대 의정활동 AI 인사이트</h1>
-      <InsightsTable rows={rows} />
-    </main>
-  );
-}
-```
-
-- [ ] **Step 4: Run and manually verify in the browser**
-
-Run: `npm run dev`, open `http://localhost:3000`, confirm the table renders with real data, and click a tag chip to confirm it opens the video URL (with `#t=` if a timecode exists).
+Run: `npx expo start` (from `mobile/`, with `backend/` running separately on port 3000) and confirm the default Expo Router screen loads in Expo Go or a simulator.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/page.tsx components/InsightsTable.tsx components/TagChip.tsx
-git commit -m "feat: render insights dashboard with tag-to-video deep links"
+git init
+git add -A
+git commit -m "chore: scaffold Expo mobile app with typed API client"
 ```
 
-### Task 4.3: Filters (의원별, 회의별, 태그별, 점수 범위별)
+### Task 12: Insights list screen
 
 **Files:**
-- Modify: `app/page.tsx`
-- Create: `components/InsightsFilters.tsx`
+- Create: `mobile/app/index.tsx`
+- Create: `mobile/components/InsightCard.tsx`
+- Create: `mobile/components/TagChip.tsx`
 
 **Interfaces:**
-- Consumes: `InsightRow[]` (4.1/4.2).
-- Produces: client-side filtered view — terminal task, no downstream consumers besides Phase 5 QA.
+- Consumes: `fetchInsights` (Task 11).
+- Produces: navigation to `mobile/app/statement/[id].tsx` (Task 13) when a tag or card is tapped, passing the tapped row's `statementId`.
 
-- [ ] **Step 1: Build a client filter bar that narrows the already-fetched rows**
+- [ ] **Step 1: Build the tappable tag chip**
 
 ```tsx
-// components/InsightsFilters.tsx
-"use client";
-import { useMemo, useState } from "react";
-import type { InsightRow } from "@/lib/queries/insights";
-import { InsightsTable } from "./InsightsTable";
+// mobile/components/TagChip.tsx
+import { Pressable, Text, StyleSheet } from "react-native";
+import { router } from "expo-router";
 
-export function InsightsFilters({ rows }: { rows: InsightRow[] }) {
+export function TagChip({ tag, statementId }: { tag: string; statementId: number }) {
+  return (
+    <Pressable
+      onPress={() => router.push(`/statement/${statementId}`)}
+      style={styles.chip}
+    >
+      <Text style={styles.label}>{tag}</Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  chip: { backgroundColor: "#dbeafe", borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4, marginRight: 6, marginBottom: 6 },
+  label: { color: "#1e40af", fontSize: 13 },
+});
+```
+
+- [ ] **Step 2: Build the card for one statement row**
+
+```tsx
+// mobile/components/InsightCard.tsx
+import { View, Text, StyleSheet } from "react-native";
+import type { InsightRow } from "@/lib/api";
+import { TagChip } from "./TagChip";
+
+export function InsightCard({ row }: { row: InsightRow }) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.meeting}>{row.meetingTitle}</Text>
+      <Text style={styles.member}>{row.memberName}</Text>
+      <View style={styles.tagRow}>
+        {row.tags.map((tag) => (
+          <TagChip key={tag} tag={tag} statementId={row.statementId} />
+        ))}
+      </View>
+      <View style={styles.scoreRow}>
+        <Text style={styles.score}>학습 {row.learningLevel}</Text>
+        <Text style={styles.score}>질의 {row.questionScore}</Text>
+        <Text style={styles.score}>아이디어 {row.ideaScore}</Text>
+        <Text style={styles.score}>실행 {row.feasibilityScore}</Text>
+        <Text style={styles.score}>거제영향 {row.geojeImpactScore}</Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: { padding: 12, borderRadius: 8, backgroundColor: "#fff", marginBottom: 10, borderWidth: 1, borderColor: "#e5e7eb" },
+  meeting: { fontSize: 12, color: "#6b7280" },
+  member: { fontSize: 16, fontWeight: "600", marginVertical: 2 },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", marginVertical: 4 },
+  scoreRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  score: { fontSize: 12, color: "#374151" },
+});
+```
+
+- [ ] **Step 3: Wire the list screen**
+
+```tsx
+// mobile/app/index.tsx
+import { useEffect, useState } from "react";
+import { FlatList, ActivityIndicator, StyleSheet, View } from "react-native";
+import { fetchInsights, type InsightRow } from "@/lib/api";
+import { InsightCard } from "@/components/InsightCard";
+
+export default function IndexScreen() {
+  const [rows, setRows] = useState<InsightRow[] | null>(null);
+
+  useEffect(() => {
+    fetchInsights().then(setRows).catch(() => setRows([]));
+  }, []);
+
+  if (!rows) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      contentContainerStyle={styles.list}
+      data={rows}
+      keyExtractor={(row) => String(row.statementId)}
+      renderItem={({ item }) => <InsightCard row={item} />}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  list: { padding: 12 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+});
+```
+
+- [ ] **Step 4: Run and manually verify**
+
+Run: `npx expo start`, open in Expo Go/simulator, confirm the list renders real data from the backend and tapping a tag attempts navigation (Task 13 will make the destination screen real).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app/index.tsx components/InsightCard.tsx components/TagChip.tsx
+git commit -m "feat: render insights list with tappable tag chips"
+```
+
+### Task 13: Statement detail screen (replaces the video jump)
+
+**Files:**
+- Create: `mobile/app/statement/[id].tsx`
+- Modify: `mobile/lib/api.ts`
+
+**Interfaces:**
+- Consumes: `statementId` route param (from Task 12's navigation).
+- Produces: `fetchInsightById(id: number): Promise<InsightRow | null>` added to `mobile/lib/api.ts` — used only by this screen.
+
+- [ ] **Step 1: Add a single-row fetch helper**
+
+```typescript
+// mobile/lib/api.ts (append)
+export async function fetchInsightById(id: number): Promise<InsightRow | null> {
+  const rows = await fetchInsights();
+  return rows.find((r) => r.statementId === id) ?? null;
+}
+```
+
+- [ ] **Step 2: Build the detail screen**
+
+```tsx
+// mobile/app/statement/[id].tsx
+import { useEffect, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { ScrollView, Text, View, ActivityIndicator, StyleSheet } from "react-native";
+import { fetchInsightById, type InsightRow } from "@/lib/api";
+
+export default function StatementDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [row, setRow] = useState<InsightRow | null | undefined>(undefined);
+
+  useEffect(() => {
+    fetchInsightById(Number(id)).then(setRow);
+  }, [id]);
+
+  if (row === undefined) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (row === null) {
+    return (
+      <View style={styles.center}>
+        <Text>발언을 찾을 수 없습니다.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.meeting}>{row.meetingTitle}</Text>
+      <Text style={styles.member}>{row.memberName}</Text>
+      <Text style={styles.sectionTitle}>요약</Text>
+      <Text style={styles.body}>{row.summary}</Text>
+      <Text style={styles.sectionTitle}>회의록 원문</Text>
+      <Text style={styles.body}>{row.rawText}</Text>
+      <Text style={styles.sectionTitle}>AI 채점 근거</Text>
+      <Text style={styles.body}>{row.rationale}</Text>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  meeting: { fontSize: 12, color: "#6b7280" },
+  member: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: "600", marginTop: 12, marginBottom: 4 },
+  body: { fontSize: 14, lineHeight: 20, color: "#1f2937" },
+});
+```
+
+- [ ] **Step 3: Run and manually verify**
+
+Run: `npx expo start`, tap a tag from the list screen, confirm the detail screen shows the meeting title, member, summary, full 회의록 원문 text, and Opus 5 rationale — no video reference anywhere.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add app/statement lib/api.ts
+git commit -m "feat: add statement detail screen showing minutes text (replaces video jump)"
+```
+
+### Task 14: Filters (의원별, 회의별, 거제영향도 최소값)
+
+**Files:**
+- Create: `mobile/components/InsightFilters.tsx`
+- Modify: `mobile/app/index.tsx`
+
+**Interfaces:**
+- Consumes: `InsightRow[]` (Task 11/12), `fetchInsights` (Task 11).
+- Produces: filtered list rendering — terminal task, no downstream consumers besides Phase 6 QA.
+
+- [ ] **Step 1: Build the filter bar**
+
+```tsx
+// mobile/components/InsightFilters.tsx
+import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+
+interface Props {
+  members: string[];
+  meetings: string[];
+  memberFilter: string;
+  meetingFilter: string;
+  minGeojeImpact: number;
+  onMemberChange: (v: string) => void;
+  onMeetingChange: (v: string) => void;
+  onMinGeojeImpactChange: (v: number) => void;
+}
+
+export function InsightFilters({
+  members,
+  meetings,
+  memberFilter,
+  meetingFilter,
+  minGeojeImpact,
+  onMemberChange,
+  onMeetingChange,
+  onMinGeojeImpactChange,
+}: Props) {
+  return (
+    <View style={styles.container}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
+        <Pressable onPress={() => onMemberChange("")} style={[styles.pill, !memberFilter && styles.pillActive]}>
+          <Text>전체 의원</Text>
+        </Pressable>
+        {members.map((m) => (
+          <Pressable key={m} onPress={() => onMemberChange(m)} style={[styles.pill, memberFilter === m && styles.pillActive]}>
+            <Text>{m}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
+        <Pressable onPress={() => onMeetingChange("")} style={[styles.pill, !meetingFilter && styles.pillActive]}>
+          <Text>전체 회의</Text>
+        </Pressable>
+        {meetings.map((m) => (
+          <Pressable key={m} onPress={() => onMeetingChange(m)} style={[styles.pill, meetingFilter === m && styles.pillActive]}>
+            <Text>{m}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+      <View style={styles.row}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <Pressable key={n} onPress={() => onMinGeojeImpactChange(n)} style={[styles.pill, minGeojeImpact === n && styles.pillActive]}>
+            <Text>거제영향도 ≥ {n}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { paddingHorizontal: 12, paddingTop: 8 },
+  row: { flexDirection: "row", marginBottom: 8 },
+  pill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: "#f3f4f6", marginRight: 6 },
+  pillActive: { backgroundColor: "#bfdbfe" },
+});
+```
+
+- [ ] **Step 2: Wire filters into the list screen**
+
+```tsx
+// mobile/app/index.tsx
+import { useEffect, useMemo, useState } from "react";
+import { FlatList, ActivityIndicator, StyleSheet, View } from "react-native";
+import { fetchInsights, type InsightRow } from "@/lib/api";
+import { InsightCard } from "@/components/InsightCard";
+import { InsightFilters } from "@/components/InsightFilters";
+
+export default function IndexScreen() {
+  const [rows, setRows] = useState<InsightRow[] | null>(null);
   const [memberFilter, setMemberFilter] = useState("");
   const [meetingFilter, setMeetingFilter] = useState("");
   const [minGeojeImpact, setMinGeojeImpact] = useState(1);
 
-  const members = useMemo(() => [...new Set(rows.map((r) => r.memberName))].sort(), [rows]);
-  const meetings = useMemo(() => [...new Set(rows.map((r) => r.meetingTitle))].sort(), [rows]);
+  useEffect(() => {
+    fetchInsights().then(setRows).catch(() => setRows([]));
+  }, []);
 
-  const filtered = rows.filter(
+  const members = useMemo(() => [...new Set((rows ?? []).map((r) => r.memberName))].sort(), [rows]);
+  const meetings = useMemo(() => [...new Set((rows ?? []).map((r) => r.meetingTitle))].sort(), [rows]);
+
+  const filtered = (rows ?? []).filter(
     (r) =>
       (!memberFilter || r.memberName === memberFilter) &&
       (!meetingFilter || r.meetingTitle === meetingFilter) &&
       r.geojeImpactScore >= minGeojeImpact
   );
 
+  if (!rows) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
   return (
-    <div>
-      <div className="mb-4 flex gap-3">
-        <select value={memberFilter} onChange={(e) => setMemberFilter(e.target.value)} className="border p-1">
-          <option value="">전체 의원</option>
-          {members.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-        <select value={meetingFilter} onChange={(e) => setMeetingFilter(e.target.value)} className="border p-1">
-          <option value="">전체 회의</option>
-          {meetings.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-        <label className="flex items-center gap-1">
-          거제영향도 ≥
-          <select value={minGeojeImpact} onChange={(e) => setMinGeojeImpact(Number(e.target.value))} className="border p-1">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <InsightsTable rows={filtered} />
-    </div>
+    <FlatList
+      contentContainerStyle={styles.list}
+      data={filtered}
+      keyExtractor={(row) => String(row.statementId)}
+      ListHeaderComponent={
+        <InsightFilters
+          members={members}
+          meetings={meetings}
+          memberFilter={memberFilter}
+          meetingFilter={meetingFilter}
+          minGeojeImpact={minGeojeImpact}
+          onMemberChange={setMemberFilter}
+          onMeetingChange={setMeetingFilter}
+          onMinGeojeImpactChange={setMinGeojeImpact}
+        />
+      }
+      renderItem={({ item }) => <InsightCard row={item} />}
+    />
   );
 }
-```
 
-- [ ] **Step 2: Swap the page to use the filter wrapper**
-
-```tsx
-// app/page.tsx
-import { getInsightRows } from "@/lib/queries/insights";
-import { InsightsFilters } from "@/components/InsightsFilters";
-
-export default async function Page() {
-  const rows = await getInsightRows();
-  return (
-    <main className="p-6">
-      <h1 className="mb-4 text-xl font-bold">거제시의회 제10대 의정활동 AI 인사이트</h1>
-      <InsightsFilters rows={rows} />
-    </main>
-  );
-}
+const styles = StyleSheet.create({
+  list: { padding: 12 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+});
 ```
 
 - [ ] **Step 3: Verify manually**
 
-Run: `npm run dev`, confirm each filter narrows the table correctly and combinations work together.
+Run: `npx expo start`, confirm each filter narrows the list correctly and combinations work together.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add app/page.tsx components/InsightsFilters.tsx
-git commit -m "feat: add member/meeting/geoje-impact filters to dashboard"
+git add app/index.tsx components/InsightFilters.tsx
+git commit -m "feat: add member/meeting/geoje-impact filters to mobile list screen"
 ```
 
 ---
 
-## Phase 5 — Verification & Deployment
+## Phase 6 — Verification & Deployment
 
 - [ ] **Step 1: Cross-check scraped data against source**
 
@@ -1266,23 +1471,33 @@ Pick 2 meetings at random from `meetings`. Open their `sourceUrl` in a real brow
 
 - [ ] **Step 2: Rubric sanity pass on AI scores**
 
-Pick 10 rows from `statementInsights` spanning different members. Read the `summary`, `rationale`, and 5 scores side by side with the original `rawText` and confirm a human would broadly agree with the ratings. Adjust the Task 3.2 prompt rubric wording if scores skew unrealistically high/low across the board, then re-run Task 3.3 for the affected statements (delete their `statementInsights` rows first so they're picked up as pending again).
+Pick 10 rows from `statementInsights` spanning different members. Read the `summary`, `rationale`, and 5 scores side by side with the original `rawText` and confirm a human would broadly agree with the ratings. Adjust the Task 8 prompt rubric wording if scores skew unrealistically high/low across the board, then re-run Task 9 for the affected statements (delete their `statementInsights` rows first).
 
-- [ ] **Step 3: End-to-end dashboard QA in a real browser**
+- [ ] **Step 3: End-to-end mobile QA**
 
-Run the dev server, load the dashboard, and manually verify: table renders all columns correctly, tag click opens a new tab at the source video (or the meeting's video page if no timecode was available), and all filters work individually and combined.
+With `backend/` running (or deployed) and `EXPO_PUBLIC_API_BASE_URL` pointed at it, run the mobile app in Expo Go/simulator and manually verify: list renders all fields, tag tap opens the correct statement's detail screen with full 회의록 원문, and all filters work individually and combined.
 
-- [ ] **Step 4: Deploy to Vercel**
+- [ ] **Step 4: Deploy the backend to Vercel**
 
 ```bash
+cd backend
 vercel --prod
 ```
 
-Confirm the production URL loads the same data (i.e., `DATABASE_URL` is set in the Vercel project's production environment — `VERCEL_OIDC_TOKEN` is auto-managed on Vercel deployments, no manual step needed).
+Confirm the production URL responds at `/api/insights` (i.e., `DATABASE_URL` is set in the Vercel project's production environment — `VERCEL_OIDC_TOKEN` is auto-managed on Vercel deployments).
 
-- [ ] **Step 5: Commit final state**
+- [ ] **Step 5: Point the mobile app at production and build with EAS**
+
+Update `mobile/.env` (not `.env.example`) with `EXPO_PUBLIC_API_BASE_URL=<production backend URL>`, then:
+
+```bash
+cd mobile
+npx eas build --platform all --profile preview
+```
+
+- [ ] **Step 6: Commit final state**
 
 ```bash
 git add -A
-git commit -m "chore: verify end-to-end pipeline and deploy dashboard"
+git commit -m "chore: verify end-to-end pipeline and deploy backend + mobile build"
 ```
