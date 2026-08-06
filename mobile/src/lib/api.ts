@@ -1,4 +1,4 @@
-// mobile/lib/api.ts
+// mobile/src/lib/api.ts
 export interface InsightRow {
   statementId: number;
   meetingTitle: string;

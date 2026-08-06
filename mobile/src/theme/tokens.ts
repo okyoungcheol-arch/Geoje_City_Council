@@ -1,4 +1,4 @@
-// mobile/theme/tokens.ts
+// mobile/src/theme/tokens.ts
 export const colors = {
   primary: { normal: "#0066FF", strong: "#005EEB", heavy: "#0054D1" },
   label: {
