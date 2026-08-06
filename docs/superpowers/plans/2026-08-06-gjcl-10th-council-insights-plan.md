@@ -56,7 +56,7 @@ cd backend
 - [ ] **Step 2: Install dependencies**
 
 ```bash
-npm install drizzle-orm @neondatabase/serverless ai playwright zod
+npm install drizzle-orm @neondatabase/serverless ai playwright zod cheerio
 npm install -D drizzle-kit tsx vitest
 ```
 
@@ -546,7 +546,10 @@ export function parseMinutesHtml(html: string): ScrapedStatement[] {
   let order = 0;
   let currentAgenda: string | null = null;
 
-  $("#minutes > .contents-block").each((_, el) => {
+  // .contents-block divs are children of #minutes-body (an inner wrapper), not of #minutes
+  // directly — #minutes also contains #minutes-header and the #agenda-block/#item-block TOC
+  // lists as siblings of #minutes-body.
+  $("#minutes-body > .contents-block").each((_, el) => {
     const $el = $(el);
 
     const $itemHeader = $el.find(".item-in-contents").first();
@@ -555,12 +558,12 @@ export function parseMinutesHtml(html: string): ScrapedStatement[] {
       return; // agenda-item header, not a statement
     }
 
-    if ($el.find(".taged-line").length > 0) {
-      return; // procedural line (timestamps, recess), not a statement
-    }
-
+    // Check speaker-block membership BEFORE checking for an embedded .taged-line: some real
+    // speaker turns contain a mid-speech audience-reaction tag (e.g. `("예" 하는 의원 있음)`)
+    // nested inside otherwise-normal speech. Checking .taged-line first would misclassify —
+    // and drop — those turns, including the meeting's own closing/adjournment statement.
     if (!$el.hasClass("speaker-block")) {
-      return; // not a recognized turn type
+      return; // not a speaker turn — either a standalone procedural .taged-line block, or unrecognized
     }
 
     if (isFreeSpeechAgenda(currentAgenda)) {
