@@ -49,6 +49,13 @@ async function run() {
           const [row] = await db
             .insert(agendaItems)
             .values({ meetingId: meetingRow.id, title, orderInMeeting: i })
+            // onConflictDoUpdate (not onConflictDoNothing) so `.returning()` always yields a
+            // row even when the agenda item already exists from a prior run — matches the
+            // pattern used for `meetings`/`members` above. onConflictDoNothing would return
+            // an empty array on conflict, and `row.id` below would throw on `undefined`.
+            // Self-assigns `title` as a no-op update, keeping this idempotent on
+            // (meetingId, title) via the unique index added for this exact gap.
+            .onConflictDoUpdate({ target: [agendaItems.meetingId, agendaItems.title], set: { title } })
             .returning();
           agendaIdByTitle.set(title, row.id);
         }
@@ -92,4 +99,9 @@ async function run() {
   }
 }
 
-run().then(() => process.exit(0));
+run()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error("run() failed:", err);
+    process.exit(1);
+  });

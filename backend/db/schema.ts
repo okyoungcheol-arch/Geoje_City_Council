@@ -28,7 +28,9 @@ export const agendaItems = pgTable("agenda_items", {
   meetingId: integer("meeting_id").notNull().references(() => meetings.id),
   title: text("title").notNull(),
   orderInMeeting: integer("order_in_meeting").notNull(),
-});
+}, (t) => ({
+  uniqMeetingTitle: uniqueIndex("agenda_items_meeting_id_title_idx").on(t.meetingId, t.title),
+}));
 
 export const statements = pgTable("statements", {
   id: serial("id").primaryKey(),

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "agenda_items_meeting_id_title_idx" ON "agenda_items" USING btree ("meeting_id","title");
