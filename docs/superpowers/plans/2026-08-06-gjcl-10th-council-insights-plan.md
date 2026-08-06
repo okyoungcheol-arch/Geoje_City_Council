@@ -228,37 +228,45 @@ git commit -m "feat: add Postgres schema for meetings, members, statements, insi
 **Interfaces:**
 - Produces: `backend/scripts/spike/findings.md`, which Phase 2 tasks (4–5) read before writing selectors.
 
-- [ ] **Step 1: Write an interactive inspection script**
+This spike has no human available to click through the site — whoever executes this task (agent or person) must drive the browser **programmatically** with Playwright's own API (`selectOption`, `click`, `page.evaluate`, `page.content()`), not by opening a visible browser and waiting for a person to interact with it. Treat it as exploratory: write and re-run small scripts, inspecting real output at each step, adjusting the next script based on what the DOM actually contains — the exact selectors are unknown ahead of time, so a single fixed script cannot be handed down verbatim.
+
+- [ ] **Step 1: Dump the form structure headlessly**
 
 ```typescript
 // backend/scripts/spike/inspect-site.ts
 import { chromium } from "playwright";
 
 async function main() {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch(); // headless (default) — no human is watching
   const page = await browser.newPage();
-
-  await page.goto("https://www.gjcl.go.kr/kr/cast/plenary.do");
-  console.log(await page.locator("form").first().evaluate(el => el.outerHTML));
-
+  const requests: string[] = [];
   page.on("request", (req) => {
     if (req.url().includes(".do") || req.url().includes("ajax") || req.url().includes("json")) {
-      console.log("REQUEST:", req.method(), req.url(), req.postData());
+      requests.push(`${req.method()} ${req.url()} ${req.postData() ?? ""}`);
     }
   });
 
-  await page.waitForTimeout(120000);
+  await page.goto("https://www.gjcl.go.kr/kr/cast/plenary.do");
+  console.log("=== FORM HTML ===");
+  console.log(await page.locator("form").first().evaluate((el) => el.outerHTML));
+  console.log("=== SELECT OPTIONS ===");
+  const selects = await page.locator("select").all();
+  for (const sel of selects) {
+    console.log(await sel.evaluate((el) => el.outerHTML));
+  }
+
   await browser.close();
+  console.log("=== REQUESTS SO FAR ===", requests);
 }
 
 main();
 ```
 
-- [ ] **Step 2: Run it and manually drive the form**
+Run: `npx tsx scripts/spike/inspect-site.ts` (from `backend/`) and read its stdout — this tells you the real `name`/`id` of the 대수 dropdown and its option values (e.g. whether "제10대" is `value="10"` or the literal Korean text).
 
-Run: `npx tsx scripts/spike/inspect-site.ts` (from `backend/`).
+- [ ] **Step 2: Programmatically select 제10대, submit, and capture the result**
 
-While it's open, manually: select 제10대, pick a 회차, open one meeting's detail/minutes view. Watch the logged `REQUEST` lines and the DOM. **Do not** investigate the video player — it is out of scope for this version.
+Using the real selector names discovered in Step 1, write a second pass of the script (or extend it) that: calls `page.selectOption(...)` with the actual selector and value for 제10대, triggers whatever submits the form (a button click, or the select's own `onchange`), waits with `page.waitForLoadState("networkidle")`, then logs the resulting `page.content()` and the accumulated `requests` array. Repeat for a 회차/round selection and for opening one meeting's detail/minutes link, drilling one level at a time based on what each response actually contains. **Do not** investigate the video player — it is out of scope for this version.
 
 - [ ] **Step 3: Record findings**
 
