@@ -1,0 +1,499 @@
+<!DOCTYPE html><html lang="ko" class="chrome"><head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge, chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<meta name="robots" content="noindex,nofollow">
+	<meta id="csrf_header" name="_csrf_header" content="X-CSRF-TOKEN">
+	<meta id="csrf" name="_csrf" content="764e12b6-788d-46d7-885a-ef1f4c890c8a">
+	<meta name="author" content="거제시의회">
+	<meta name="subject" content="거제시의회 제10대 제264회 본회의 제1차 회의록">
+	<meta name="copyright" content="거제시의회">
+	<title>거제시의회 제10대 제264회 본회의 제1차 회의록</title>
+	<link rel="icon" href="/images/common/favicon.ico" type="image/x-icon">
+	<link href="/material/font/font-roboto.css" rel="stylesheet" type="text/css">
+	<link href="/material/font/font-noto-sans-kr.css" rel="stylesheet" type="text/css">
+	<link href="/material/font/font-nanum-gothic.css" rel="stylesheet" type="text/css">
+	<link href="/material/font/font-nanum-myeongjo.css" rel="stylesheet" type="text/css">
+	<link href="/material/font/font-material-icons.css" rel="stylesheet" type="text/css">
+	<link href="/assets/icons/XEIcon/xeicon.min.css" rel="stylesheet">
+	<link href="/assets/icons/fontawesome/css/fontawesome.min.css" rel="stylesheet">
+
+	<link href="/material/plugins/bootstrap/css/bootstrap.css" rel="stylesheet">
+	
+	<link href="/material/plugins/node-waves/waves.css" rel="stylesheet">
+	
+	<link href="/material/plugins/animate-css/animate.css" rel="stylesheet">
+	<link href="/material/plugins/morrisjs/morris.css" rel="stylesheet">
+
+	<link href="/material/css/style.css" rel="stylesheet">
+	<link href="/material/css/themes/all-themes.css" rel="stylesheet">
+	<link href="/resources/viewer/minutes/common.css" rel="stylesheet">
+	<link href="/css/profile.css?1786006606262" rel="stylesheet" type="text/css">
+	<link href="/resources/viewer/minutes/viewer.css?1786006606262" rel="stylesheet">
+	
+
+	
+	
+<style type="text/css">.jqstooltip { position: absolute;left: 0px;top: 0px;visibility: hidden;background: rgb(0, 0, 0) transparent;background-color: rgba(0,0,0,0.6);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";color: white;font: 10px arial, san serif;text-align: left;white-space: nowrap;padding: 5px;border: 1px solid white;box-sizing: content-box;z-index: 10000;}.jqsfield { color: white;font: 10px arial, san serif;text-align: left;}</style></head>
+<body class="theme-light-blue" oncontextmenu="return false" onselectstart="return false" ondragstart="return false"> 
+ <div class="minutes_view">
+	
+	<!-- Page Loader -->
+	<div class="page-loader-wrapper" style="display: none;">
+		<div class="loader">
+			<div class="preloader">
+				<div class="spinner-layer pl-light-blue">
+					<div class="circle-clipper left">
+						<div class="circle"></div>
+					</div>
+					<div class="circle-clipper right">
+						<div class="circle"></div>
+					</div>
+				</div>
+			</div>
+			<p>회의록을 불러오는 중입니다.</p>
+		</div>
+	</div>
+	<!-- #END# Page Loader -->
+	
+	<div class="overlay"></div>
+	<!-- #END# Search Bar -->
+	
+
+
+
+<!-- Top Bar -->
+        <div class="header">
+            <div class="logo_wrap">
+                <h1 class="logo">거제시의회 회의록</h1>
+                <a href="/kr/main.do" target="_blank" title="거제시의회 누리집 바로가기 (새창열림)">GEOJE</a>
+            </div>
+            <div class="util_wrap">
+                <button type="button" class="bt_util">메뉴 열기</button>
+                <div class="util">
+                    <div class="search">
+                        <button type="button" class="bt_search">검색 열기</button>
+                        <form action="" name="sidebar-form" method="post" id="sidebar-form">
+                        <input type="hidden" name="_csrf" value="764e12b6-788d-46d7-885a-ef1f4c890c8a">
+                            <input type="hidden" name="mode" value="process">
+                            <fieldset>
+                                <legend>검색</legend>
+                                <input type="text" name="keyword" id="topkeyword" value="" placeholder="검색어를 입력해 주세요." title="검색어를 입력해 주세요">
+                                <div class="btns">
+                                <button type="submit" class="btns_search">검색</button>
+                                <button type="button" name="pre" id="pre-btn" class="btns_prev">이전 검색</button>
+	                            <button type="button" name="next" id="next-btn" class="btns_next">다음 검색</button>
+	                            </div>
+                            </fieldset>
+                            <!--<span style="color:red;"id ="search_result"></span> -->
+                        </form>
+                    </div>
+                    <ul>
+                        <li><a href="javascript:void(0);" id="print-minutes" title="현재페이지를 인쇄합니다.(새창열림)" class="bt_print">프린터하기</a></li>
+                        <li>
+                            <button type="button" class="bt_font">글자체 변경하기</button>
+                            <div class="list">
+                                <ul id="font-dropdown-menu">
+                                    <li><button type="button" class="change-font waves-effect waves-block" data-font="gulim">굴림체</button></li>
+                                    <li><button type="button" class="change-font waves-effect waves-block" data-font="dotum">돋움체</button></li>
+                                    <li><button type="button" class="change-font waves-effect waves-block" data-font="gungsuh">궁서체</button></li>
+                                    <li><button type="button" class="change-font waves-effect waves-block" data-font="nanum-gothic">나눔 고딕체</button></li>
+                                    <li><button type="button" class="change-font waves-effect waves-block" data-font="nanum-myeongjo">나눔 명조체</button></li>
+                                    <li><button type="button" class="change-font waves-effect waves-block" data-font="default">글자체 초기화</button></li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li>
+                            <button type="button" class="bt_size">글자크기 변경하기</button>
+                            <div class="list">
+                                <ul id="font-size-dropdown-menu">
+                                
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="10">10pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="11">11pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="12">12pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="13">13pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="14">14pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="15">15pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="16">16pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="17">17pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="18">18pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="19">19pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="20">20pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="21">21pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="22">22pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="23">23pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="24">24pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="25">25pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="26">26pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="27">27pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="28">28pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="29">29pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="30">30pt</button></li>
+                                    
+                                    <li><button type="button" class="change-font-size waves-effect waves-block" data-font-size="10">글자크기 초기화</button></li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li>
+                            <button type="button" class="bt_between">줄간격 변경하기</button>
+                            <div class="list">
+                                <ul id="line-height-dropdown-menu">
+                                	
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="100">100%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="110">110%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="120">120%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="130">130%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="140">140%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="150">150%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="160">160%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="170">170%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="180">180%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="190">190%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="200">200%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="210">210%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="220">220%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="230">230%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="240">240%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="250">250%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="260">260%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="270">270%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="280">280%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="290">290%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="300">300%</button></li>
+                                    
+                                    <li><button type="button" class="change-line-height waves-effect waves-block" data-line-height="100">줄간격 초기화</button></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+<!-- #Top Bar -->
+
+	
+
+
+
+<!-- Left Sidebar -->
+        <div class="lnb_wrap">
+            <button type="button" class="bt_menu">
+                <span class="skip">전체 메뉴</span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <div class="list_wrap on">
+                <div class="list list1">
+                    <button type="button" class="tit active">회의록</button>
+                    <div class="txt">
+                        <ul>
+                            <li class="on">
+                                <button type="button" class="tit2">부의안건</button>
+                                <div class="con con1">
+                                    <ul>
+						                
+							                
+								              <li><a href="#item1" title="○5분 자유발언(이미숙·추인호·최양희·김동수·김영규 의원)" data-item="1"><span>○5분 자유발언(이미숙·추인호·최양희·김동수·김영규 의원)</span></a></li>
+							                
+								              <li><a href="#item2" title="1. 제264회 거제시의회 임시회 회기 결정의 건" data-item="2"><span>1. 제264회 거제시의회 임시회 회기 결정의 건</span></a></li>
+							                
+								              <li><a href="#item3" title="2. 회의록 서명의원 선출의 건" data-item="3"><span>2. 회의록 서명의원 선출의 건</span></a></li>
+							                
+								              <li><a href="#item4" title="3. 2026년도 제1회 추가경정 세입·세출 예산안 제안 설명의 건" data-item="4"><span>3. 2026년도 제1회 추가경정 세입·세출 예산안 제안 설명의 건</span></a></li>
+							                
+								              <li><a href="#item5" title="4. 예산결산특별위원회 구성의 건" data-item="5"><span>4. 예산결산특별위원회 구성의 건</span></a></li>
+							                
+								              <li><a href="#item6" title="5. 2026년도 행정사무감사 계획서 승인의 건" data-item="6"><span>5. 2026년도 행정사무감사 계획서 승인의 건</span></a></li>
+							                
+								              <li><a href="#item7" title="6. 휴회의 건" data-item="7"><span>6. 휴회의 건</span></a></li>
+							                
+						                
+						                
+                                    </ul>
+                                </div>
+                            </li>
+                            <li>
+                                <button type="button" class="tit2">관련부록</button>
+                                <ul class="con con2">
+					               
+					               
+						               <li><a href="javascript:void(0);" class="none-linked-menu" title="관련 부록이 없습니다."><span>관련 부록이 없습니다.</span></a></li>
+					               
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="list list2">
+                    <button type="button" class="tit">관련 회의록</button>
+                    <div class="txt">
+                        <ul>
+			                
+				                
+					                <li><a href="/viewer/minutes.do?uid=5237">
+						                 제264회 개회식 회의록
+					                </a></li>
+				                
+					                <li><a href="/viewer/minutes.do?uid=5242">
+						                 제264회 제2차 회의록
+					                </a></li>
+				                
+			                
+			                			                
+                        </ul>
+                    </div>
+                </div>                
+                <div class="list list3">
+                    <button type="button" class="tit">발언 의원</button>
+                    <div class="txt">
+                        <ul>
+			                
+				                
+					                
+				                
+					                
+					                	<li>
+					                	<div class="attend_member_checkbox">
+											<input type="checkbox" name="attend_member" id="attend_member_08030" value="08030">
+											<label for="attend_member_08030" title="김동수 의원 발언내용만 보기">&nbsp;&nbsp;&nbsp;김동수</label>
+										</div>
+										</li>
+						                <!--<li><button type="button" name="attend_member"id="attend_member_08030" value="08030">김동수</button></li>-->
+					                
+				                
+					                
+				                
+					                
+					                	<li>
+					                	<div class="attend_member_checkbox">
+											<input type="checkbox" name="attend_member" id="attend_member_09020" value="09020">
+											<label for="attend_member_09020" title="김영규 의원 발언내용만 보기">&nbsp;&nbsp;&nbsp;김영규</label>
+										</div>
+										</li>
+						                <!--<li><button type="button" name="attend_member"id="attend_member_09020" value="09020">김영규</button></li>-->
+					                
+				                
+					                
+				                
+					                
+				                
+					                
+					                	<li>
+					                	<div class="attend_member_checkbox">
+											<input type="checkbox" name="attend_member" id="attend_member_08080" value="08080">
+											<label for="attend_member_08080" title="안석봉 의원 발언내용만 보기">&nbsp;&nbsp;&nbsp;안석봉</label>
+										</div>
+										</li>
+						                <!--<li><button type="button" name="attend_member"id="attend_member_08080" value="08080">안석봉</button></li>-->
+					                
+				                
+					                
+				                
+					                
+				                
+					                
+					                	<li>
+					                	<div class="attend_member_checkbox">
+											<input type="checkbox" name="attend_member" id="attend_member_09040" value="09040">
+											<label for="attend_member_09040" title="이미숙 의원 발언내용만 보기">&nbsp;&nbsp;&nbsp;이미숙</label>
+										</div>
+										</li>
+						                <!--<li><button type="button" name="attend_member"id="attend_member_09040" value="09040">이미숙</button></li>-->
+					                
+				                
+					                
+				                
+					                
+				                
+					                
+				                
+					                
+					                	<li>
+					                	<div class="attend_member_checkbox">
+											<input type="checkbox" name="attend_member" id="attend_member_07080" value="07080">
+											<label for="attend_member_07080" title="최양희 의원 발언내용만 보기">&nbsp;&nbsp;&nbsp;최양희</label>
+										</div>
+										</li>
+						                <!--<li><button type="button" name="attend_member"id="attend_member_07080" value="07080">최양희</button></li>-->
+					                
+				                
+					                
+					                	<li>
+					                	<div class="attend_member_checkbox">
+											<input type="checkbox" name="attend_member" id="attend_member_10050" value="10050">
+											<label for="attend_member_10050" title="추인호 의원 발언내용만 보기">&nbsp;&nbsp;&nbsp;추인호</label>
+										</div>
+										</li>
+						                <!--<li><button type="button" name="attend_member"id="attend_member_10050" value="10050">추인호</button></li>-->
+					                
+				                
+					                
+				                
+			                
+			                                        
+                        </ul>
+                    </div>
+                </div>
+                <div class="list list2">
+                    <button type="button" class="tit">관련 의안</button>
+                    <div class="txt">
+                        <ul>
+			                
+				                
+					                <li><a href="/promote/minutes/billview.do?uid=3331" rel="noopener noreferrer" target="_blank" title="새창열림">
+						                2026년도 행정사무감사 계획서 승인의 건
+					                </a></li>
+				                
+			                
+			                			                
+                        </ul>
+                    </div>
+                </div>                
+             </div>
+        </div>                
+<!-- #END# Left Sidebar -->
+
+	
+
+
+<div class="container" id="minutes_print">
+	<div class="content no-animate" id="minutes_top">
+    <div class="content-wrapper" id="canvas"><div id="minutes"><div id="minutes-header"><p class="align-right" id="temporary-minutes-sub-title-line">[본 회의록은 최종 교정 전 임시회의록이므로 법적 효력이 없습니다.]</p><p class="session-line">제264회&nbsp;거제시의회(임시회)</p><h1 class="align-center" id="minutes-title-line">본회의&nbsp;회의록</h1><p class="align-right" id="order-line">제1호</p><p class="align-right" id="office-line">거제시의회사무국</p><hr><p id="date-line">일&nbsp;시&nbsp;:&nbsp;2026년&nbsp;7월&nbsp;20일(월)&nbsp;10시&nbsp;00분</p></div><hr><ol id="agenda-block"><li class="agenda_line font-bold">&nbsp;&nbsp;의사일정</li><li class="agenda_line">&nbsp;&nbsp;1.&nbsp;제264회&nbsp;거제시의회&nbsp;임시회&nbsp;회기&nbsp;결정의&nbsp;건</li><li class="agenda_line">&nbsp;&nbsp;2.&nbsp;회의록&nbsp;서명의원&nbsp;선출의&nbsp;건</li><li class="agenda_line">&nbsp;&nbsp;3.&nbsp;2026년도&nbsp;제1회&nbsp;추가경정&nbsp;세입·세출&nbsp;예산안&nbsp;제안&nbsp;설명의&nbsp;건</li><li class="agenda_line">&nbsp;&nbsp;4.&nbsp;예산결산특별위원회&nbsp;구성의&nbsp;건</li><li class="agenda_line">&nbsp;&nbsp;5.&nbsp;2026년도&nbsp;행정사무감사&nbsp;계획서&nbsp;승인의&nbsp;건</li><li class="agenda_line">&nbsp;&nbsp;6.&nbsp;휴회의&nbsp;건</li></ol><hr><ol id="item-block"><li class="item_line font-bold">&nbsp;&nbsp;부의된&nbsp;안건</li><li class="item_line font-bold"><a href="#item1" title="○5분 자유발언(이미숙·추인호·최양희·김동수·김영규 의원)" data-item="1">&nbsp;&nbsp;○5분&nbsp;자유발언(이미숙·추인호·최양희·김동수·김영규&nbsp;의원)</a></li><li class="item_line font-bold"><a href="#item2" title="1. 제264회 거제시의회 임시회 회기 결정의 건" data-item="2">&nbsp;&nbsp;1.&nbsp;제264회&nbsp;거제시의회&nbsp;임시회&nbsp;회기&nbsp;결정의&nbsp;건</a></li><li class="item_line font-bold"><a href="#item3" title="2. 회의록 서명의원 선출의 건" data-item="3">&nbsp;&nbsp;2.&nbsp;회의록&nbsp;서명의원&nbsp;선출의&nbsp;건</a></li><li class="item_line font-bold"><a href="#item4" title="3. 2026년도 제1회 추가경정 세입·세출 예산안 제안 설명의 건" data-item="4">&nbsp;&nbsp;3.&nbsp;2026년도&nbsp;제1회&nbsp;추가경정&nbsp;세입·세출&nbsp;예산안&nbsp;제안&nbsp;설명의&nbsp;건</a></li><li class="item_line font-bold"><a href="#item5" title="4. 예산결산특별위원회 구성의 건" data-item="5">&nbsp;&nbsp;4.&nbsp;예산결산특별위원회&nbsp;구성의&nbsp;건</a></li><li class="item_line font-bold"><a href="#item6" title="5. 2026년도 행정사무감사 계획서 승인의 건" data-item="6">&nbsp;&nbsp;5.&nbsp;2026년도&nbsp;행정사무감사&nbsp;계획서&nbsp;승인의&nbsp;건</a></li><li class="item_line font-bold"><a href="#item7" title="6. 휴회의 건" data-item="7">&nbsp;&nbsp;6.&nbsp;휴회의&nbsp;건</a></li></ol><hr><div id="minutes-body"><div class="contents-block" data-con_idx="0"><p class="taged-line tag-R">(10시 09분  개의)</p></div><div class="contents-block speaker-block member-speech" data-con_idx="1" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;성원이&nbsp;되었으므로&nbsp;제264회&nbsp;거제시의회&nbsp;임시회&nbsp;제1차&nbsp;본회의를&nbsp;개의하겠습니다.<br>&nbsp;&nbsp;의회사무국장으로부터&nbsp;집회보고가&nbsp;있겠습니다.&nbsp;사무국장&nbsp;직무대리,&nbsp;보고하여&nbsp;주시기&nbsp;바랍니다.<br></div><div class="contents-block speaker-block" data-con_idx="2" data-member_code=""><strong>○사무국장 직무대리 윤병삼</strong>&nbsp;&nbsp;의회사무국장&nbsp;직무대리&nbsp;윤병삼입니다.&nbsp;<br>&nbsp;&nbsp;먼저&nbsp;제264회&nbsp;거제시의&nbsp;임시회&nbsp;집회에&nbsp;대하여&nbsp;보고드리겠습니다.<br>&nbsp;&nbsp;오늘&nbsp;집회는&nbsp;거제시장으로부터&nbsp;2026년&nbsp;7월&nbsp;6일&nbsp;「지방자치법」&nbsp;제54조제3항의&nbsp;규정에&nbsp;따른&nbsp;소집&nbsp;요구가&nbsp;있어서&nbsp;「거제시의회&nbsp;회의&nbsp;규칙」&nbsp;제16조에&nbsp;따라&nbsp;의회운영위원회&nbsp;협의를&nbsp;거쳤으며,&nbsp;「지방자치법」&nbsp;제54조제4항의&nbsp;규정에&nbsp;따라&nbsp;7월&nbsp;15일&nbsp;공고하여&nbsp;오늘&nbsp;개의하게&nbsp;되었습니다.&nbsp;<br>&nbsp;&nbsp;다음은&nbsp;의안&nbsp;접수&nbsp;사항입니다.&nbsp;거제시장으로부터&nbsp;2026년도&nbsp;제1회&nbsp;추가경정&nbsp;세입·세출예산안&nbsp;등&nbsp;2건이&nbsp;제출되어&nbsp;소관&nbsp;상임위원회에&nbsp;회부하였습니다.&nbsp;이상&nbsp;보고를&nbsp;마치겠습니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="3" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;수고하셨습니다.<br>&nbsp;&nbsp;다음은&nbsp;의안을&nbsp;상정하기에&nbsp;앞서&nbsp;「거제시의회&nbsp;위원회&nbsp;조례」&nbsp;제8조와&nbsp;제11조에&nbsp;따라&nbsp;윤리특별위원회&nbsp;위원장,&nbsp;부위원장&nbsp;선임&nbsp;현황과&nbsp;의회운영위원회&nbsp;부위원장&nbsp;선임&nbsp;현황에&nbsp;대하여&nbsp;보고드리겠습니다.<br>&nbsp;&nbsp;먼저&nbsp;지난&nbsp;7월&nbsp;3일&nbsp;윤리특별위원회&nbsp;회의를&nbsp;열어&nbsp;위원장과&nbsp;부위원장을&nbsp;호선한&nbsp;결과,&nbsp;윤리특별위원장에&nbsp;신수정&nbsp;의원,&nbsp;부위원장에&nbsp;김경습&nbsp;의원이&nbsp;선임되었음을&nbsp;보고드립니다.&nbsp;<br>&nbsp;&nbsp;다음으로&nbsp;지난&nbsp;7월&nbsp;3일&nbsp;의회운영위원회&nbsp;회의를&nbsp;열어&nbsp;부위원장을&nbsp;호선한&nbsp;결과,&nbsp;의회운영위원회&nbsp;부위원장에&nbsp;윤현아&nbsp;의원이&nbsp;선임되었음을&nbsp;보고드립니다.&nbsp;<br><hr></div><div class="contents-block" data-con_idx="4"><strong class="item-in-contents" id="item1" title="○5분 자유발언(이미숙·추인호·최양희·김동수·김영규 의원)">○5분&nbsp;자유발언(이미숙·추인호·최양희·김동수·김영규&nbsp;의원)</strong>&nbsp;<a href="#" class="go-to-top" title="처음으로"><i class="fa fas fa-arrow-circle-up"></i></a><br><p class="taged-line tag-R">(10시 12분)</p></div><div class="contents-block speaker-block member-speech" data-con_idx="5" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;「거제시의회&nbsp;회의&nbsp;규칙」&nbsp;제37조의2에&nbsp;따라&nbsp;이미숙&nbsp;의원,&nbsp;추인호&nbsp;의원,&nbsp;최양희&nbsp;의원,&nbsp;김동수&nbsp;의원,&nbsp;김영규&nbsp;의원의&nbsp;5분&nbsp;자유발언&nbsp;신청이&nbsp;있어&nbsp;이를&nbsp;허가하였습니다.<br>&nbsp;&nbsp;이미숙&nbsp;의원&nbsp;발언하여&nbsp;주시기&nbsp;바랍니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="6" data-member_code="09040"><strong>○<a class="member_profile btn_profile" id="btn_profile_185" href="#profile_layer_popup" data-uid="185" title="이미숙 의원 프로필 보기">이미숙</a> 의원</strong>&nbsp;&nbsp;주제:&nbsp;거제&nbsp;시민의&nbsp;건강&nbsp;증진과&nbsp;체류형&nbsp;스포츠&nbsp;관광&nbsp;활성화를&nbsp;위한&nbsp;러닝&nbsp;인프라&nbsp;구축<br>&nbsp;&nbsp;존경하는&nbsp;거제시민&nbsp;여러분,&nbsp;안석봉&nbsp;의장님과&nbsp;선배·동료&nbsp;의원&nbsp;여러분!&nbsp;<br>&nbsp;&nbsp;그리고&nbsp;변광용&nbsp;시장님과&nbsp;관계&nbsp;공무원&nbsp;여러분!&nbsp;반갑습니다.<br>&nbsp;&nbsp;언제나&nbsp;시민&nbsp;중심에서&nbsp;시민을&nbsp;위해&nbsp;뛰는&nbsp;고현·장평·수양동&nbsp;지역구&nbsp;거제시의회&nbsp;이미숙&nbsp;의원입니다.<br>&nbsp;&nbsp;본&nbsp;의원은&nbsp;오늘,&nbsp;우리&nbsp;거제&nbsp;시민의&nbsp;일상적인&nbsp;건강권을&nbsp;확보하고,&nbsp;최근&nbsp;전국적으로&nbsp;뜨겁게&nbsp;떠오르고&nbsp;있는&nbsp;대세&nbsp;스포츠인&nbsp;‘러닝(Running)’을&nbsp;거제의&nbsp;새로운&nbsp;성장&nbsp;동력으로&nbsp;삼기&nbsp;위한&nbsp;‘러닝&nbsp;코스&nbsp;개발&nbsp;및&nbsp;인프라&nbsp;활성화&nbsp;정책’을&nbsp;제안하고자&nbsp;이&nbsp;자리에&nbsp;섰습니다.<br>&nbsp;&nbsp;문화체육관광부의&nbsp;국민생활체육조사에&nbsp;따르면,&nbsp;주로&nbsp;참여하는&nbsp;체육&nbsp;활동&nbsp;중&nbsp;‘달리기(러닝)’를&nbsp;선택한&nbsp;비율이&nbsp;1년&nbsp;만에&nbsp;2.9%&nbsp;증가하며,&nbsp;바야흐로&nbsp;‘1천만&nbsp;러너&nbsp;시대’에&nbsp;접어든&nbsp;것입니다.&nbsp;이처럼&nbsp;러닝은&nbsp;이제&nbsp;단순한&nbsp;운동을&nbsp;넘어&nbsp;남녀노소&nbsp;누구나&nbsp;즐기는&nbsp;대중적인&nbsp;라이프스타일로&nbsp;자리&nbsp;잡았습니다.&nbsp;실제로&nbsp;최근&nbsp;아침저녁으로&nbsp;동네&nbsp;공원과&nbsp;천변을&nbsp;달리는&nbsp;시민들을&nbsp;흔히&nbsp;볼&nbsp;수&nbsp;있으며,&nbsp;이는&nbsp;우리&nbsp;거제에&nbsp;건강한&nbsp;활력을&nbsp;불어넣고&nbsp;있습니다.&nbsp;<br>&nbsp;&nbsp;하지만&nbsp;현재&nbsp;우리&nbsp;시의&nbsp;인프라&nbsp;실정은&nbsp;어떠합니까?&nbsp;물론&nbsp;연초천&nbsp;한들행복길,&nbsp;독봉산&nbsp;시민공원처럼&nbsp;잘&nbsp;정비된&nbsp;산책로가&nbsp;있지만&nbsp;본격적인&nbsp;러닝이나&nbsp;장거리&nbsp;훈련을&nbsp;소화하기에는&nbsp;코스가&nbsp;너무&nbsp;짧고&nbsp;보행자·자전거가&nbsp;뒤엉켜&nbsp;안전사고&nbsp;위험이&nbsp;큽니다.&nbsp;반면&nbsp;칠천도와&nbsp;산달도,&nbsp;바람의&nbsp;언덕에서&nbsp;해금강,&nbsp;홍포에서&nbsp;여차로&nbsp;이어지는&nbsp;명품&nbsp;해안&nbsp;도로는&nbsp;전국의&nbsp;러너들이&nbsp;극찬하는&nbsp;명소임에도&nbsp;불구하고&nbsp;별도의&nbsp;보행로가&nbsp;없어&nbsp;러너들이&nbsp;차도&nbsp;위를&nbsp;위태롭게&nbsp;달리고&nbsp;있습니다.&nbsp;경치를&nbsp;감상하는&nbsp;운전자와&nbsp;갓길&nbsp;없이&nbsp;도로&nbsp;위를&nbsp;달리는&nbsp;러너&nbsp;모두가&nbsp;늘&nbsp;사고&nbsp;위험에&nbsp;노출되어&nbsp;있는&nbsp;것이&nbsp;지금&nbsp;거제의&nbsp;안타까운&nbsp;현실입니다.&nbsp;<br>&nbsp;&nbsp;이에&nbsp;본&nbsp;의원은&nbsp;거제를&nbsp;남해안&nbsp;최고의&nbsp;‘스포츠-웰니스&nbsp;대표&nbsp;도시’로&nbsp;도약시키기&nbsp;위해&nbsp;세&nbsp;가지&nbsp;정책을&nbsp;적극&nbsp;제안합니다.<br>&nbsp;&nbsp;첫째,&nbsp;차량과&nbsp;완전히&nbsp;분리된&nbsp;‘안전하고&nbsp;연속성&nbsp;있는&nbsp;장거리&nbsp;러닝&nbsp;보행로’를&nbsp;구축해야&nbsp;합니다.&nbsp;달리는&nbsp;도중에&nbsp;흐름이&nbsp;끊기지&nbsp;않도록&nbsp;횡단보도나&nbsp;교통신호의&nbsp;영향을&nbsp;최소화하고,&nbsp;자동차나&nbsp;오토바이&nbsp;같은&nbsp;차량으로부터&nbsp;시민들의&nbsp;생명과&nbsp;안전이&nbsp;확실히&nbsp;보장되는&nbsp;전용&nbsp;러닝&nbsp;코스를&nbsp;단계적으로&nbsp;설계해&nbsp;주십시오.<br>&nbsp;&nbsp;둘째,&nbsp;러닝과&nbsp;관광을&nbsp;결합한&nbsp;‘거제&nbsp;런트립(Run-Trip)’브랜딩을&nbsp;추진해야&nbsp;합니다.&nbsp;최근&nbsp;한국관광공사의&nbsp;관광&nbsp;데이터랩&nbsp;분석과&nbsp;주요&nbsp;언론&nbsp;보도에&nbsp;따르면,&nbsp;러닝을&nbsp;목적으로&nbsp;지역을&nbsp;방문해&nbsp;숙박하고&nbsp;소비하는&nbsp;‘체류형&nbsp;스포츠&nbsp;관광객’이&nbsp;증가하고&nbsp;있습니다.&nbsp;시민들이&nbsp;매일&nbsp;이용하는&nbsp;‘생활&nbsp;밀착형&nbsp;코스’와&nbsp;관광객들이&nbsp;거제의&nbsp;절경을&nbsp;느끼며&nbsp;달릴&nbsp;수&nbsp;있는&nbsp;‘시그니처&nbsp;코스’를&nbsp;조화롭게&nbsp;이원화하여&nbsp;개발해야&nbsp;합니다.<br>&nbsp;&nbsp;셋째,&nbsp;거제만의&nbsp;명품&nbsp;도보길인&nbsp;‘섬앤섬길’을&nbsp;적극&nbsp;활용하고,&nbsp;러너들을&nbsp;위한&nbsp;맞춤형&nbsp;서비스&nbsp;플랫폼&nbsp;‘거제로&nbsp;뛸거제’&nbsp;프로젝트를&nbsp;도입해&nbsp;주십시오.&nbsp;우리&nbsp;거제는&nbsp;이미&nbsp;2013년부터&nbsp;13년째&nbsp;이어져&nbsp;온&nbsp;‘거제100K&nbsp;트레일러닝&nbsp;대회’라는&nbsp;소중한&nbsp;자산을&nbsp;갖고&nbsp;있습니다.&nbsp;올해도&nbsp;대만·미국·일본&nbsp;등&nbsp;해외&nbsp;러너들이&nbsp;거제의&nbsp;산과&nbsp;바다를&nbsp;달리며&nbsp;스포츠와&nbsp;관광을&nbsp;함께&nbsp;즐겼습니다.&nbsp;<br>&nbsp;&nbsp;우리&nbsp;거제는&nbsp;이미&nbsp;검증된&nbsp;국제대회를&nbsp;보유하고&nbsp;있는&nbsp;것입니다.&nbsp;그러나&nbsp;정작&nbsp;이&nbsp;대회와&nbsp;시민의&nbsp;일상을&nbsp;이어줄&nbsp;상시&nbsp;러닝&nbsp;인프라는&nbsp;부족한&nbsp;것이&nbsp;현실입니다.&nbsp;현재&nbsp;추진&nbsp;중인&nbsp;섬앤섬길&nbsp;리모델링&nbsp;사업과&nbsp;거제&nbsp;100K를&nbsp;연계하여,&nbsp;각&nbsp;코스의&nbsp;난이도와&nbsp;안내&nbsp;서비스를&nbsp;구축하고&nbsp;완주&nbsp;스탬프&nbsp;투어와&nbsp;포토존을&nbsp;설치한다면,&nbsp;일회성&nbsp;대회를&nbsp;넘어&nbsp;거제&nbsp;전역을&nbsp;사계절&nbsp;누구나&nbsp;찾는&nbsp;하나의&nbsp;거대한&nbsp;‘러닝&nbsp;테마파크’로&nbsp;탈바꿈시킬&nbsp;수&nbsp;있습니다.&nbsp;<br>&nbsp;&nbsp;존경하는&nbsp;시장님과&nbsp;관계&nbsp;공무원&nbsp;여러분!<br>&nbsp;&nbsp;안전하고&nbsp;아름다운&nbsp;러닝&nbsp;인프라가&nbsp;구축된다면&nbsp;시민들에게는&nbsp;건강한&nbsp;삶을&nbsp;선물하고,&nbsp;전국에서&nbsp;찾아오는&nbsp;체류형&nbsp;스포츠&nbsp;관광객들을&nbsp;통해&nbsp;침체된&nbsp;골목상권과&nbsp;지역&nbsp;경제를&nbsp;활성화하는&nbsp;확실한&nbsp;돌파구가&nbsp;될&nbsp;것입니다.<br>&nbsp;&nbsp;독봉산&nbsp;웰빙공원부터&nbsp;문동폭포,&nbsp;노자산&nbsp;파노라마&nbsp;케이블카와&nbsp;바람의&nbsp;언덕을&nbsp;잇는&nbsp;명품&nbsp;코스들이&nbsp;누구나&nbsp;도전하고&nbsp;싶어&nbsp;하는&nbsp;꿈의&nbsp;완주&nbsp;코스로&nbsp;재탄생할&nbsp;수&nbsp;있도록&nbsp;선제적이고&nbsp;과감한&nbsp;투자를&nbsp;당부드립니다.&nbsp;시민들의&nbsp;건강과&nbsp;삶의&nbsp;질이야말로&nbsp;거제의&nbsp;힘찬&nbsp;도약을&nbsp;이끄는&nbsp;가장&nbsp;강력한&nbsp;원동력입니다.&nbsp;<br>&nbsp;&nbsp;이상&nbsp;5분&nbsp;자유발언을&nbsp;마치겠습니다.&nbsp;경청해&nbsp;주셔서&nbsp;감사합니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="7" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;이미숙&nbsp;의원님&nbsp;수고하셨습니다.<br>&nbsp;&nbsp;소개가&nbsp;조금&nbsp;늦었는데&nbsp;방청객을&nbsp;소개해&nbsp;드리겠습니다.&nbsp;장평동에서&nbsp;오신&nbsp;이재삼&nbsp;님,&nbsp;귀한&nbsp;시간&nbsp;내어&nbsp;우리&nbsp;의회&nbsp;본회의장을&nbsp;찾아주셔서&nbsp;감사드립니다.&nbsp;방청을&nbsp;환영합니다.&nbsp;<br>&nbsp;&nbsp;그리고&nbsp;경남도민일보&nbsp;표세호&nbsp;기자님,&nbsp;환영합니다.&nbsp;감사합니다.<br>&nbsp;&nbsp;추인호&nbsp;의원&nbsp;발언하여&nbsp;주시기&nbsp;바랍니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="8" data-member_code="10050"><strong>○<a class="member_profile btn_profile" id="btn_profile_192" href="#profile_layer_popup" data-uid="192" title="추인호 의원 프로필 보기">추인호</a> 의원</strong>&nbsp;&nbsp;주제:&nbsp;(가칭)거제중앙도서관의&nbsp;조속한&nbsp;건립&nbsp;촉구<br>&nbsp;&nbsp;존경하는&nbsp;23만&nbsp;거제시민&nbsp;여러분!&nbsp;<br>&nbsp;&nbsp;안석봉&nbsp;의장님을&nbsp;비롯한&nbsp;선배·동료&nbsp;의원&nbsp;여러분!&nbsp;<br>&nbsp;&nbsp;변광용&nbsp;시장님과&nbsp;관계&nbsp;공무원&nbsp;여러분!&nbsp;반갑습니다.<br>&nbsp;&nbsp;상문동&nbsp;지역구&nbsp;국민의힘,&nbsp;추인호&nbsp;의원입니다.<br>&nbsp;&nbsp;저는&nbsp;오늘,&nbsp;2022년&nbsp;12월&nbsp;건립&nbsp;추진계획&nbsp;수립을&nbsp;시작으로&nbsp;2030년&nbsp;개관을&nbsp;목표로&nbsp;추진&nbsp;중인&nbsp;(가칭)거제중앙도서관&nbsp;건립&nbsp;사업과&nbsp;관련하여,&nbsp;더딘&nbsp;사업&nbsp;진행이&nbsp;아니라&nbsp;시민들이&nbsp;하루라도&nbsp;더&nbsp;빨리&nbsp;도서관을&nbsp;이용할&nbsp;수&nbsp;있도록&nbsp;조기&nbsp;준공과&nbsp;조기&nbsp;개관을&nbsp;적극&nbsp;추진해야&nbsp;한다는&nbsp;말씀을&nbsp;드리고자&nbsp;이&nbsp;자리에&nbsp;섰습니다.&nbsp;<br>&nbsp;&nbsp;(가칭)거제중앙도서관은&nbsp;총사업비&nbsp;409억&nbsp;원을&nbsp;투입하여&nbsp;상동동&nbsp;148-1번지&nbsp;용산쉼터&nbsp;일원,&nbsp;부지면적&nbsp;9,440㎡&nbsp;규모로&nbsp;조성되는&nbsp;거제시&nbsp;최대&nbsp;규모의&nbsp;공공도서관입니다.<br>&nbsp;&nbsp;우리&nbsp;시는&nbsp;지난&nbsp;2024년&nbsp;10월,&nbsp;제3차&nbsp;지방재정&nbsp;투자심사&nbsp;조건부&nbsp;승인을&nbsp;받으며&nbsp;본&nbsp;사업의&nbsp;추진&nbsp;기반을&nbsp;마련하였고,&nbsp;최근에는&nbsp;국토교통부의&nbsp;「건축&nbsp;설계공모&nbsp;운영지침」에&nbsp;따라&nbsp;설계공모&nbsp;심사&nbsp;과정을&nbsp;생중계하는&nbsp;등&nbsp;공정성을&nbsp;기해왔으며,&nbsp;현재&nbsp;최종&nbsp;설계공모&nbsp;당선작을&nbsp;선정했습니다.&nbsp;설계안&nbsp;선정은&nbsp;앞으로&nbsp;수십&nbsp;년&nbsp;동안&nbsp;시민들이&nbsp;이용하게&nbsp;될&nbsp;공간의&nbsp;방향과&nbsp;철학을&nbsp;결정하는&nbsp;중요한&nbsp;출발점이라&nbsp;할&nbsp;수&nbsp;있습니다.&nbsp;<br>&nbsp;&nbsp;이제부터&nbsp;사업의&nbsp;성패는&nbsp;행정이&nbsp;얼마나&nbsp;책임&nbsp;있게&nbsp;사업을&nbsp;관리하고,&nbsp;속도감&nbsp;있게&nbsp;추진하느냐에&nbsp;달려&nbsp;있습니다.&nbsp;무엇보다&nbsp;중요한&nbsp;것은&nbsp;사업이&nbsp;불필요하게&nbsp;지연되지&nbsp;않도록&nbsp;행정절차를&nbsp;신속하게&nbsp;추진하는&nbsp;한편,&nbsp;설계공모를&nbsp;통해&nbsp;선정된&nbsp;우수한&nbsp;설계안이&nbsp;훼손되지&nbsp;않도록&nbsp;완성도&nbsp;높은&nbsp;실시설계를&nbsp;추진하는&nbsp;것입니다.<br>&nbsp;&nbsp;이에&nbsp;본&nbsp;의원은&nbsp;거제중앙도서관의&nbsp;성공적인&nbsp;건립과&nbsp;차질&nbsp;없는&nbsp;사업추진을&nbsp;위해&nbsp;다음과&nbsp;같이&nbsp;제안드리고자&nbsp;합니다.<br>&nbsp;&nbsp;첫째,&nbsp;실시설계&nbsp;용역&nbsp;과정에&nbsp;시민과&nbsp;전문가의&nbsp;의견을&nbsp;적극&nbsp;반영해&nbsp;주시기&nbsp;바랍니다.&nbsp;그동안&nbsp;실무부서가&nbsp;축적해&nbsp;온&nbsp;국내외&nbsp;우수&nbsp;도서관&nbsp;벤치마킹&nbsp;사례와&nbsp;운영&nbsp;노하우를&nbsp;실시설계에&nbsp;충분히&nbsp;담아내고,&nbsp;시민들의&nbsp;다양한&nbsp;문화·교육&nbsp;수요를&nbsp;반영하여&nbsp;누구나&nbsp;찾고&nbsp;머물고&nbsp;싶은&nbsp;복합문화공간으로&nbsp;완성해&nbsp;주시기&nbsp;바랍니다.<br>&nbsp;&nbsp;둘째,&nbsp;실시설계&nbsp;단계에서&nbsp;설계경제성검토,&nbsp;즉&nbsp;VE(Value&nbsp;Engineering)를&nbsp;철저히&nbsp;시행해&nbsp;주시기&nbsp;바랍니다.&nbsp;거제중앙도서관은&nbsp;총공사비&nbsp;100억&nbsp;원&nbsp;이상의&nbsp;공공건설공사로&nbsp;법령에&nbsp;따른&nbsp;VE&nbsp;의무대상에&nbsp;해당합니다.&nbsp;공공시설은&nbsp;초기&nbsp;설계의&nbsp;완성도가&nbsp;사업의&nbsp;성패를&nbsp;좌우합니다.&nbsp;초기&nbsp;검토가&nbsp;미흡하면&nbsp;반복적인&nbsp;설계&nbsp;변경과&nbsp;예산&nbsp;증액,&nbsp;공기&nbsp;지연은&nbsp;물론&nbsp;BF&nbsp;인증&nbsp;등&nbsp;각종&nbsp;행정절차에&nbsp;차질이&nbsp;발생할&nbsp;수&nbsp;있습니다.&nbsp;따라서&nbsp;전문기관의&nbsp;객관적이고&nbsp;체계적인&nbsp;VE를&nbsp;통해&nbsp;설계의&nbsp;경제성과&nbsp;기능성,&nbsp;시공성을&nbsp;충분히&nbsp;검증하고,&nbsp;사업&nbsp;추진&nbsp;과정에서&nbsp;발생할&nbsp;수&nbsp;있는&nbsp;구조적인&nbsp;문제를&nbsp;원천적으로&nbsp;차단하여&nbsp;예산&nbsp;절감과&nbsp;사업&nbsp;기간&nbsp;단축,&nbsp;설계&nbsp;품질&nbsp;확보를&nbsp;동시에&nbsp;실현해야&nbsp;할&nbsp;것입니다.<br>&nbsp;&nbsp;셋째,&nbsp;중앙도서관은&nbsp;단순한&nbsp;공공시설이&nbsp;아니라&nbsp;거제를&nbsp;대표하는&nbsp;랜드마크가&nbsp;되어야&nbsp;합니다.&nbsp;건물의&nbsp;외형뿐&nbsp;아니라&nbsp;광장과&nbsp;보행&nbsp;동선,&nbsp;열린&nbsp;휴식공간까지&nbsp;함께&nbsp;계획하여&nbsp;시민&nbsp;누구나&nbsp;자연스럽게&nbsp;찾고&nbsp;머무를&nbsp;수&nbsp;있는&nbsp;복합문화&nbsp;랜드마크로&nbsp;조성해야&nbsp;합니다.&nbsp;또한&nbsp;지역의&nbsp;정체성과&nbsp;미래&nbsp;비전을&nbsp;담아&nbsp;전국&nbsp;어느&nbsp;지역과&nbsp;비교해도&nbsp;손색없는&nbsp;거제의&nbsp;대표&nbsp;공공건축물로&nbsp;완성되어야&nbsp;할&nbsp;것입니다.<br>&nbsp;&nbsp;변광용&nbsp;시장님,&nbsp;그리고&nbsp;관계&nbsp;공무원&nbsp;여러분!<br>&nbsp;&nbsp;행정은&nbsp;단순히&nbsp;절차를&nbsp;수행하는&nbsp;역할에&nbsp;머물러서는&nbsp;안&nbsp;됩니다.&nbsp;사업을&nbsp;총괄하고&nbsp;책임지는&nbsp;주체로서&nbsp;속도와&nbsp;품질을&nbsp;함께&nbsp;관리하며&nbsp;사업을&nbsp;선도적으로&nbsp;이끌어야&nbsp;합니다.&nbsp;2030년&nbsp;개관이라는&nbsp;계획에&nbsp;머물지&nbsp;말고,&nbsp;가능한&nbsp;모든&nbsp;행정절차를&nbsp;병행&nbsp;추진하여&nbsp;사업기간을&nbsp;최대한&nbsp;단축하고&nbsp;시민들이&nbsp;하루라도&nbsp;더&nbsp;빨리&nbsp;새로운&nbsp;중앙도서관을&nbsp;이용할&nbsp;수&nbsp;있도록&nbsp;모든&nbsp;행정역량을&nbsp;집중해&nbsp;주실&nbsp;것을&nbsp;부탁드립니다.&nbsp;<br>&nbsp;&nbsp;높아진&nbsp;시민들의&nbsp;기대와&nbsp;행정&nbsp;수요에&nbsp;부응하는&nbsp;적극행정을&nbsp;통해&nbsp;거제중앙도서관이&nbsp;시민&nbsp;모두의&nbsp;자부심이자&nbsp;미래세대를&nbsp;위한&nbsp;최고의&nbsp;문화자산으로&nbsp;완성될&nbsp;수&nbsp;있도록&nbsp;시장님의&nbsp;확고한&nbsp;의지와&nbsp;집행부의&nbsp;적극적인&nbsp;추진을&nbsp;다시&nbsp;한번&nbsp;당부드리며,&nbsp;이상&nbsp;5분&nbsp;자유발언을&nbsp;마치겠습니다.&nbsp;<br>&nbsp;&nbsp;경청해&nbsp;주셔서&nbsp;감사합니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="9" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;추인호&nbsp;의원님&nbsp;수고하셨습니다.<br>&nbsp;&nbsp;최양희&nbsp;의원&nbsp;발언하여&nbsp;주시기&nbsp;바랍니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="10" data-member_code="07080"><strong>○<a class="member_profile btn_profile" id="btn_profile_181" href="#profile_layer_popup" data-uid="181" title="최양희 의원 프로필 보기">최양희</a> 의원</strong>&nbsp;&nbsp;주제:&nbsp;거제남부관광단지&nbsp;사업의&nbsp;공정한&nbsp;검증과&nbsp;투명성을&nbsp;확보하라<br>&nbsp;&nbsp;존경하는&nbsp;거제시민&nbsp;여러분!&nbsp;반갑습니다.<br>&nbsp;&nbsp;거제시의회&nbsp;경제관광위원회&nbsp;위원,&nbsp;현재&nbsp;무소속,&nbsp;거제&nbsp;시민&nbsp;최양희입니다.<br>&nbsp;&nbsp;이&nbsp;자리에&nbsp;다시&nbsp;설&nbsp;수&nbsp;있게&nbsp;해주신&nbsp;거제시민들과&nbsp;지역구&nbsp;아주동민들께&nbsp;진심으로&nbsp;감사드립니다.&nbsp;주어진&nbsp;임기&nbsp;동안&nbsp;시민들께서&nbsp;부여한&nbsp;임무를&nbsp;충실히&nbsp;수행하는&nbsp;일꾼이&nbsp;될&nbsp;것을&nbsp;다짐하면서&nbsp;‘보존이&nbsp;곧&nbsp;경제다’라는&nbsp;주제로&nbsp;5분&nbsp;자유발언을&nbsp;하고자&nbsp;합니다.<br>&nbsp;&nbsp;노자산,&nbsp;남부관광단지&nbsp;이야기입니다.<br>&nbsp;&nbsp;이&nbsp;사업은&nbsp;2017년&nbsp;거제시가&nbsp;경상남도에&nbsp;관광단지&nbsp;지정&nbsp;신청을&nbsp;하여,&nbsp;2019년&nbsp;경상남도에서&nbsp;거제&nbsp;남부관광단지&nbsp;지정&nbsp;고시를&nbsp;합니다.&nbsp;2020년&nbsp;부산&nbsp;최대&nbsp;건설회사&nbsp;경동건설이&nbsp;2028년&nbsp;완공을&nbsp;목표로&nbsp;약&nbsp;축구장&nbsp;450개&nbsp;면적에&nbsp;27홀&nbsp;골프장과&nbsp;호텔&nbsp;등&nbsp;숙박시설과&nbsp;연수&nbsp;시설&nbsp;등을&nbsp;조성하기&nbsp;위해&nbsp;4300억&nbsp;원을&nbsp;투자하겠다는&nbsp;사업계획서를&nbsp;제출합니다.<br>&nbsp;&nbsp;이&nbsp;사업의&nbsp;근거가&nbsp;되는&nbsp;전략환경영향평가&nbsp;보고서&nbsp;초안에는&nbsp;사업지구&nbsp;약&nbsp;370만㎡&nbsp;중&nbsp;생태자연도&nbsp;1등급지가&nbsp;62,500㎡&nbsp;즉,&nbsp;1.7%라고&nbsp;거짓&nbsp;보고를&nbsp;합니다.&nbsp;이후&nbsp;2022년&nbsp;4월&nbsp;환경부는&nbsp;생태자연도&nbsp;1등급지가&nbsp;1,357,787㎡로&nbsp;36.8%라고&nbsp;고시합니다.&nbsp;이는&nbsp;바다면적을&nbsp;포함한&nbsp;것으로&nbsp;육지&nbsp;부분만&nbsp;보면&nbsp;실제&nbsp;생태자연도&nbsp;1등급&nbsp;비율은&nbsp;41%에&nbsp;해당됩니다.&nbsp;전략환경영향평가&nbsp;보고서에&nbsp;개발부지&nbsp;내&nbsp;생태자연도&nbsp;1등급지가&nbsp;41%라고&nbsp;제대로&nbsp;보고했다면,&nbsp;이&nbsp;사업은&nbsp;시작도&nbsp;못&nbsp;했을&nbsp;것입니다.<br>&nbsp;&nbsp;이&nbsp;사업은&nbsp;출발이&nbsp;거짓&nbsp;부실&nbsp;보고서에&nbsp;의해&nbsp;시작된&nbsp;것인&nbsp;만큼&nbsp;재검토해야&nbsp;한다고&nbsp;주장한&nbsp;바&nbsp;있고&nbsp;지금도&nbsp;변함이&nbsp;없습니다.&nbsp;그럼에도&nbsp;불구하고&nbsp;정권이&nbsp;바뀌면서&nbsp;이&nbsp;사업은&nbsp;속도를&nbsp;내게&nbsp;됩니다.&nbsp;현재&nbsp;2023년&nbsp;12월,&nbsp;낙동강유역환경청의&nbsp;거제남부관광단지&nbsp;환경영향평가&nbsp;협의의견인&nbsp;골프장&nbsp;내&nbsp;확인된&nbsp;대흥란&nbsp;230촉의&nbsp;10%에&nbsp;해당하는&nbsp;23촉을&nbsp;자생지에서&nbsp;시범이식한&nbsp;후&nbsp;최소&nbsp;2년간&nbsp;생존&nbsp;여부를&nbsp;확인하고&nbsp;생존이&nbsp;확인될&nbsp;경우&nbsp;모든&nbsp;대흥란을&nbsp;이식하고&nbsp;사업&nbsp;승인하라는&nbsp;조건부&nbsp;협의를&nbsp;이행&nbsp;중입니다.<br>&nbsp;&nbsp;이식&nbsp;성공여부&nbsp;판단은&nbsp;경상남도,&nbsp;낙동강유역환경청,&nbsp;국립생태원,&nbsp;한국환경연구원,&nbsp;국립생물자원관&nbsp;등이&nbsp;추천한&nbsp;전문가&nbsp;그룹이&nbsp;하도록&nbsp;했습니다.&nbsp;즉,&nbsp;남부관광단지의&nbsp;사업&nbsp;여부는&nbsp;대흥란&nbsp;이식의&nbsp;성공여부에&nbsp;달려&nbsp;있다고&nbsp;볼&nbsp;수&nbsp;있습니다.<br>&nbsp;&nbsp;거제시민단체에&nbsp;따르면&nbsp;사업자는&nbsp;23촉을&nbsp;이식하지&nbsp;않고&nbsp;50촉을&nbsp;이식해&nbsp;협의의견을&nbsp;위반했다고&nbsp;합니다.&nbsp;또한,&nbsp;골프장&nbsp;개발을&nbsp;위해&nbsp;대흥란&nbsp;시범이식&nbsp;성공이&nbsp;절실한&nbsp;사업자가&nbsp;대흥란을&nbsp;굴취-운반-이식-모니터링하는&nbsp;과정을&nbsp;직접&nbsp;수행하고&nbsp;있으며,&nbsp;개화여부를&nbsp;모니터링하는&nbsp;과정에&nbsp;시민단체&nbsp;및&nbsp;전문가그룹&nbsp;등&nbsp;그&nbsp;누구도&nbsp;검증하지&nbsp;않았다고&nbsp;합니다.<br>&nbsp;&nbsp;거제시는&nbsp;사업자의&nbsp;대흥란&nbsp;이식&nbsp;과정을&nbsp;투명하게&nbsp;공개하고&nbsp;정확하게&nbsp;몇&nbsp;촉을&nbsp;이식했으며,&nbsp;몇&nbsp;촉이&nbsp;피었는지&nbsp;확인하고&nbsp;보고해&nbsp;주시기&nbsp;바랍니다.&nbsp;아울러&nbsp;대흥란&nbsp;이식&nbsp;성공여부의&nbsp;기준은&nbsp;무엇인지&nbsp;밝혀주시기&nbsp;바랍니다.<br>&nbsp;&nbsp;또한,&nbsp;대흥란&nbsp;이식&nbsp;성공여부를&nbsp;판단하는&nbsp;전문가그룹이&nbsp;사업자로부터&nbsp;자문료를&nbsp;받는&nbsp;한&nbsp;공정성에&nbsp;대한&nbsp;의구심을&nbsp;떨칠&nbsp;수&nbsp;없습니다.&nbsp;찬반&nbsp;양측의&nbsp;시민&nbsp;대표자들이&nbsp;참여하는&nbsp;‘공식위원회’를&nbsp;구성하여&nbsp;객관성을&nbsp;확보해야&nbsp;이&nbsp;사업에&nbsp;대한&nbsp;명분이&nbsp;생깁니다.<br>&nbsp;&nbsp;노자산&nbsp;개발지역은&nbsp;멸종위기&nbsp;대흥란의&nbsp;세계&nbsp;최대&nbsp;자생지이자,&nbsp;멸종위기종&nbsp;거제외줄달팽이의&nbsp;국내&nbsp;유일한&nbsp;서식처이며,&nbsp;팔색조의&nbsp;최대&nbsp;번식지입니다.&nbsp;이&nbsp;일대는&nbsp;보존과&nbsp;복원이&nbsp;원칙인&nbsp;생태자연도&nbsp;1등급지가&nbsp;전체&nbsp;개발지의&nbsp;41%를&nbsp;차지하고,&nbsp;천연기념물과&nbsp;멸종위기종&nbsp;등&nbsp;법정보호종이&nbsp;53종이나&nbsp;살고&nbsp;있는&nbsp;생태적&nbsp;가치가&nbsp;높은&nbsp;곳으로,&nbsp;생물다양성이&nbsp;세계&nbsp;최고라&nbsp;해도&nbsp;과언이&nbsp;아닐&nbsp;것입니다.<br>&nbsp;&nbsp;경제적&nbsp;논리로&nbsp;접근하더라도&nbsp;전&nbsp;세계가&nbsp;지향하는&nbsp;지속&nbsp;가능하고,&nbsp;생태친화적&nbsp;관광이&nbsp;골프장보다&nbsp;훨씬&nbsp;더&nbsp;길게&nbsp;사랑받게&nbsp;될&nbsp;것입니다.<br>&nbsp;&nbsp;존경하는&nbsp;거제시민&nbsp;여러분!<br>&nbsp;&nbsp;지역경제&nbsp;활성화를&nbsp;위해&nbsp;관광단지,&nbsp;필요하면&nbsp;해야&nbsp;한다고&nbsp;생각합니다.&nbsp;그러나&nbsp;축구장&nbsp;450개에&nbsp;해당하는&nbsp;숲이&nbsp;사라지는&nbsp;만큼&nbsp;신중하게&nbsp;접근해야&nbsp;하는데&nbsp;이&nbsp;사업은&nbsp;시작부터&nbsp;부실하게&nbsp;출발했고&nbsp;그&nbsp;과정도&nbsp;투명하지&nbsp;않습니다.&nbsp;자본과&nbsp;권력의&nbsp;힘으로,&nbsp;<br>&nbsp;&nbsp;&nbsp;(발언시간&nbsp;초과로&nbsp;마이크&nbsp;중단)<br><hr><p class="taged-line tag-R">(마이크 중단 이후 계속 발언한 부분)</p>&nbsp;&nbsp;밀어붙이려&nbsp;한다면&nbsp;시민들의&nbsp;저항도&nbsp;커질&nbsp;것이며,&nbsp;돈보다&nbsp;다음&nbsp;세대를&nbsp;위한&nbsp;헌신이&nbsp;더&nbsp;힘이&nbsp;세다는&nbsp;것이&nbsp;증명될&nbsp;것입니다.<br>&nbsp;&nbsp;이상&nbsp;5분&nbsp;자유발언을&nbsp;마치겠습니다.&nbsp;장마&nbsp;피해&nbsp;없도록&nbsp;만전을&nbsp;기해주시기&nbsp;바랍니다.&nbsp;<br>&nbsp;&nbsp;경청해&nbsp;주셔서&nbsp;감사합니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="11" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;최양희&nbsp;의원&nbsp;수고하셨습니다.<br>&nbsp;&nbsp;김동수&nbsp;의원&nbsp;발언하여&nbsp;주시기&nbsp;바랍니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="12" data-member_code="08030"><strong>○<a class="member_profile btn_profile" id="btn_profile_183" href="#profile_layer_popup" data-uid="183" title="김동수 의원 프로필 보기">김동수</a> 의원</strong>&nbsp;&nbsp;주제:&nbsp;공공시설&nbsp;용지&nbsp;환매권&nbsp;관리&nbsp;강화와&nbsp;시민&nbsp;혈세&nbsp;낭비&nbsp;대책&nbsp;촉구<br>&nbsp;&nbsp;존경하는&nbsp;시민&nbsp;여러분,&nbsp;안녕하십니까?&nbsp;김동수&nbsp;의원입니다.<br>&nbsp;&nbsp;저는&nbsp;오늘&nbsp;공공시설&nbsp;용지&nbsp;환매권&nbsp;관리를&nbsp;강화하고,&nbsp;공직&nbsp;기강&nbsp;해이에서&nbsp;비롯된&nbsp;직무&nbsp;태만,&nbsp;성실&nbsp;의무&nbsp;소홀로&nbsp;시민의&nbsp;혈세가&nbsp;낭비되는&nbsp;것을&nbsp;막기&nbsp;위한&nbsp;거제시의&nbsp;대책&nbsp;마련을&nbsp;강력히&nbsp;촉구하고자&nbsp;합니다.<br>&nbsp;&nbsp;시민&nbsp;혈세는&nbsp;거제시&nbsp;공무원들이&nbsp;거제시&nbsp;공무원&nbsp;복무&nbsp;조례에서&nbsp;규정한&nbsp;성실&nbsp;의무&nbsp;소홀로&nbsp;패소한&nbsp;손해배상금을&nbsp;지급하기&nbsp;위해&nbsp;있는&nbsp;돈이&nbsp;아닙니다.&nbsp;저는&nbsp;이번&nbsp;장평동&nbsp;테니스장&nbsp;부지&nbsp;환매권&nbsp;관련&nbsp;체육지원과&nbsp;추경&nbsp;예산서&nbsp;배상금&nbsp;12억&nbsp;원을&nbsp;보고&nbsp;시민의&nbsp;한&nbsp;사람으로서&nbsp;분노를&nbsp;느끼며&nbsp;이&nbsp;사태에&nbsp;대해&nbsp;책임&nbsp;소재를&nbsp;따져&nbsp;시민들에게&nbsp;밝힐&nbsp;것을&nbsp;촉구합니다.<br>&nbsp;&nbsp;아울러&nbsp;현재&nbsp;거제시는&nbsp;행정타운&nbsp;조성&nbsp;사업과&nbsp;경찰서&nbsp;이전&nbsp;사업&nbsp;등&nbsp;주요&nbsp;현안&nbsp;사업들이&nbsp;장기간&nbsp;방향을&nbsp;잡지&nbsp;못하고&nbsp;표류하고&nbsp;있습니다.&nbsp;갈등을&nbsp;조정하고&nbsp;해법을&nbsp;제시해야&nbsp;할&nbsp;행정과&nbsp;정치가&nbsp;오히려&nbsp;갈등을&nbsp;키우는&nbsp;모습으로&nbsp;비추어진다면&nbsp;고향&nbsp;거제의&nbsp;미래는&nbsp;더욱&nbsp;불투명해질&nbsp;수밖에&nbsp;없습니다.&nbsp;또한&nbsp;지난&nbsp;8년간&nbsp;거제시&nbsp;행정을&nbsp;깊숙이&nbsp;들여다본&nbsp;저의&nbsp;심정은&nbsp;집행부&nbsp;공무원들의&nbsp;노고와&nbsp;애로사항에&nbsp;대해&nbsp;모르는&nbsp;바는&nbsp;아니나&nbsp;실망이&nbsp;더&nbsp;크다는&nbsp;것을&nbsp;분명히&nbsp;말씀드립니다.&nbsp;시대가&nbsp;변하고&nbsp;세대가&nbsp;바뀌어도&nbsp;공직자의&nbsp;책임과&nbsp;사명은&nbsp;변하지&nbsp;않습니다.&nbsp;집행부&nbsp;공직자가&nbsp;제&nbsp;역할을&nbsp;다하지&nbsp;못하면&nbsp;거제시&nbsp;미래는&nbsp;없다는&nbsp;것을&nbsp;명심하시기&nbsp;바랍니다.<br>&nbsp;&nbsp;장평동&nbsp;테니스장&nbsp;부지&nbsp;환매권&nbsp;관련&nbsp;손해배상&nbsp;청구&nbsp;소송에서&nbsp;거제시의&nbsp;상고가&nbsp;기각되면서&nbsp;손해배상금&nbsp;12억&nbsp;원을&nbsp;시민&nbsp;혈세로&nbsp;물어주게&nbsp;생겼습니다.&nbsp;뿐만&nbsp;아니라&nbsp;앞으로&nbsp;유사한&nbsp;손해배상&nbsp;소송&nbsp;제기가&nbsp;우려되는&nbsp;상황이라&nbsp;더&nbsp;큰&nbsp;문제입니다.&nbsp;거제시는&nbsp;당장&nbsp;대비책을&nbsp;수립하고&nbsp;대응해야&nbsp;할&nbsp;것입니다.&nbsp;공익사업을&nbsp;위해&nbsp;시민의&nbsp;토지를&nbsp;취득했다면&nbsp;그&nbsp;토지가&nbsp;당초&nbsp;목적대로&nbsp;사용되는지&nbsp;끝까지&nbsp;관리하는&nbsp;것은&nbsp;행정의&nbsp;기본&nbsp;책무입니다.&nbsp;사업이&nbsp;폐지·변경되거나&nbsp;장기간&nbsp;사용되지&nbsp;않아&nbsp;환매권이&nbsp;발생했다면&nbsp;원&nbsp;소유주가&nbsp;정해진&nbsp;기간&nbsp;안에&nbsp;권리를&nbsp;행사할&nbsp;수&nbsp;있도록&nbsp;지체&nbsp;없이&nbsp;알려야&nbsp;합니다.&nbsp;<br>&nbsp;&nbsp;그러나&nbsp;장평동&nbsp;테니스장&nbsp;부지는&nbsp;주민에게&nbsp;환매권&nbsp;발생&nbsp;사실이&nbsp;제때&nbsp;통지되지&nbsp;않았고,&nbsp;결국&nbsp;주민들은&nbsp;자신들의&nbsp;토지를&nbsp;되찾을&nbsp;권리&nbsp;행사&nbsp;기회를&nbsp;잃었습니다.&nbsp;이는&nbsp;법정기한&nbsp;관리와&nbsp;부서&nbsp;간&nbsp;인수인계,&nbsp;취득&nbsp;토지의&nbsp;사후관리에&nbsp;실패한&nbsp;중대한&nbsp;행정책임의&nbsp;문제입니다.&nbsp;주민에게&nbsp;소송으로&nbsp;피해를&nbsp;입증하라고&nbsp;떠넘겨서는&nbsp;안&nbsp;됩니다.&nbsp;주민은&nbsp;시간과&nbsp;비용을&nbsp;들이고,&nbsp;거제시는&nbsp;손해배상금과&nbsp;소송비용,&nbsp;지연이자까지&nbsp;시민&nbsp;세금으로&nbsp;부담하게&nbsp;됩니다.<br>&nbsp;&nbsp;타&nbsp;지자체&nbsp;사례도&nbsp;이를&nbsp;분명히&nbsp;보여줍니다.&nbsp;양산공설운동장&nbsp;부지&nbsp;관련&nbsp;대법원&nbsp;판례에서도&nbsp;공익사업으로&nbsp;취득한&nbsp;토지가&nbsp;실제&nbsp;사업에&nbsp;이용되었는지를&nbsp;살펴&nbsp;환매권&nbsp;성립&nbsp;여부를&nbsp;판단했습니다.&nbsp;이는&nbsp;공공시설&nbsp;용지를&nbsp;취득하는&nbsp;데&nbsp;그치지&nbsp;않고&nbsp;사업&nbsp;추진&nbsp;상황과&nbsp;토지&nbsp;이용&nbsp;여부를&nbsp;지속적으로&nbsp;관리해야&nbsp;한다는&nbsp;점을&nbsp;보여줍니다.&nbsp;즉,&nbsp;토지보상법은&nbsp;행정기관이&nbsp;허술한&nbsp;사업계획으로&nbsp;토지를&nbsp;매입해&nbsp;사유재산권을&nbsp;침해하는&nbsp;것을&nbsp;막고&nbsp;치밀한&nbsp;사업계획을&nbsp;통해&nbsp;토지를&nbsp;매입함으로써&nbsp;공공사업의&nbsp;효율성을&nbsp;높이려는&nbsp;것입니다.&nbsp;사업계획&nbsp;실패와&nbsp;환매권&nbsp;관리&nbsp;실패는&nbsp;곧&nbsp;주민&nbsp;재산권&nbsp;침해이자&nbsp;시민&nbsp;혈세&nbsp;탕진입니다.<br>&nbsp;&nbsp;이에&nbsp;집행부에&nbsp;강력히&nbsp;요구합니다.&nbsp;<br>&nbsp;&nbsp;첫째,&nbsp;장평동&nbsp;테니스장&nbsp;부지의&nbsp;취득부터&nbsp;사업&nbsp;추진과&nbsp;변경,&nbsp;환매권&nbsp;발생과&nbsp;소멸에&nbsp;이르기까지&nbsp;전&nbsp;과정을&nbsp;철저히&nbsp;조사하고,&nbsp;담당&nbsp;부서와&nbsp;책임&nbsp;소재를&nbsp;시민들에게&nbsp;투명하게&nbsp;공개하십시오.&nbsp;<br>&nbsp;&nbsp;둘째,&nbsp;거제시가&nbsp;공익사업을&nbsp;위해&nbsp;취득한&nbsp;전체&nbsp;토지를&nbsp;즉시&nbsp;전수조사하고,&nbsp;취득&nbsp;목적과&nbsp;실제&nbsp;사용&nbsp;여부,&nbsp;사업의&nbsp;변경·폐지&nbsp;시점,&nbsp;환매권&nbsp;발생&nbsp;가능일과&nbsp;통지&nbsp;여부를&nbsp;통합관리대장과&nbsp;전산시스템을&nbsp;통해&nbsp;관리하십시오.<br>&nbsp;&nbsp;셋째,&nbsp;환매권&nbsp;발생&nbsp;여부에&nbsp;대한&nbsp;법무&nbsp;부서의&nbsp;의무&nbsp;검토,&nbsp;소멸&nbsp;기한&nbsp;자동&nbsp;알림,&nbsp;담당자&nbsp;변경&nbsp;시&nbsp;인수인계&nbsp;확인,&nbsp;부서별&nbsp;정기&nbsp;점검과&nbsp;책임자&nbsp;결제를&nbsp;제도화하십시오.&nbsp;집행부가&nbsp;잘못을&nbsp;숨기거나&nbsp;부서&nbsp;간&nbsp;책임을&nbsp;미루는&nbsp;행정은&nbsp;더&nbsp;큰&nbsp;주민&nbsp;피해와&nbsp;재정&nbsp;손실을&nbsp;가져올&nbsp;뿐입니다.<br>&nbsp;&nbsp;거제시는&nbsp;이번&nbsp;사안을&nbsp;철저히&nbsp;바로잡아야&nbsp;합니다.&nbsp;계획성&nbsp;없는&nbsp;시정&nbsp;운영과&nbsp;허술한&nbsp;행정&nbsp;처리로&nbsp;시민의&nbsp;혈세가&nbsp;줄줄&nbsp;새는&nbsp;일이&nbsp;더&nbsp;이상&nbsp;반복되어서는&nbsp;안&nbsp;됩니다.&nbsp;집행부는&nbsp;책임&nbsp;소재를&nbsp;분명히&nbsp;밝히고&nbsp;주민&nbsp;피해와&nbsp;재정&nbsp;손실을&nbsp;최소화하기&nbsp;위한&nbsp;즉각적이고&nbsp;책임&nbsp;있는&nbsp;조치에&nbsp;나설&nbsp;것을&nbsp;촉구합니다.<br>&nbsp;&nbsp;10초&nbsp;남았네요.&nbsp;현장에서는&nbsp;1000만&nbsp;원,&nbsp;2000만&nbsp;원이&nbsp;없어서&nbsp;스트레스받고&nbsp;사업&nbsp;추진을&nbsp;못합니다.&nbsp;12억&nbsp;원.<br>&nbsp;&nbsp;&nbsp;(발언시간&nbsp;초과로&nbsp;마이크&nbsp;중단)<br><hr><p class="taged-line tag-R">(마이크 중단 이후 계속 발언한 부분)</p>&nbsp;&nbsp;생돈&nbsp;묻어집니다.&nbsp;이게&nbsp;무슨&nbsp;행정입니까!<br>&nbsp;&nbsp;마치겠습니다.&nbsp;<br></div><div class="contents-block speaker-block member-speech" data-con_idx="13" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;김동수&nbsp;의원님&nbsp;수고하셨습니다.&nbsp;<br>&nbsp;&nbsp;우리&nbsp;김동수&nbsp;의원님은&nbsp;3선&nbsp;의원이고&nbsp;중진&nbsp;의원인데&nbsp;그래도&nbsp;본회의장에&nbsp;의장에&nbsp;대한&nbsp;예의는&nbsp;좀&nbsp;지켜주십시오.&nbsp;이게&nbsp;법적&nbsp;의무는&nbsp;아니지만&nbsp;회의장&nbsp;예의가&nbsp;관행입니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="14" data-member_code="08030"><strong>○<a class="member_profile btn_profile" id="btn_profile_183" href="#profile_layer_popup" data-uid="183" title="김동수 의원 프로필 보기">김동수</a> 위원</strong>&nbsp;&nbsp;앞으로&nbsp;의장님&nbsp;의회&nbsp;운영하는&nbsp;것&nbsp;봐서.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="15" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;의장에&nbsp;대한&nbsp;예의를&nbsp;지켜주실&nbsp;것을&nbsp;부탁드립니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="16" data-member_code="08030"><strong>○<a class="member_profile btn_profile" id="btn_profile_183" href="#profile_layer_popup" data-uid="183" title="김동수 의원 프로필 보기">김동수</a> 위원</strong>&nbsp;&nbsp;존경스럽게&nbsp;운영하면&nbsp;인사하겠습니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="17" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;뭐가&nbsp;존경스럽지&nbsp;않은지를&nbsp;말씀을&nbsp;좀&nbsp;해줄&nbsp;수&nbsp;있습니까?&nbsp;<br></div><div class="contents-block speaker-block member-speech" data-con_idx="18" data-member_code="08030"><strong>○<a class="member_profile btn_profile" id="btn_profile_183" href="#profile_layer_popup" data-uid="183" title="김동수 의원 프로필 보기">김동수</a> 위원</strong>&nbsp;&nbsp;지금&nbsp;여기서&nbsp;말씀&nbsp;드릴까요?&nbsp;<br></div><div class="contents-block speaker-block member-speech" data-con_idx="19" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;예,&nbsp;뭐가&nbsp;존경스럽지&nbsp;않습니까?<br></div><div class="contents-block speaker-block member-speech" data-con_idx="20" data-member_code="08030"><strong>○<a class="member_profile btn_profile" id="btn_profile_183" href="#profile_layer_popup" data-uid="183" title="김동수 의원 프로필 보기">김동수</a> 위원</strong>&nbsp;&nbsp;위원회&nbsp;위원&nbsp;선임에&nbsp;있어서&nbsp;강제&nbsp;배정안을&nbsp;우리&nbsp;의장님이&nbsp;직접&nbsp;들고&nbsp;나왔습니다.&nbsp;제가&nbsp;봤을&nbsp;때는&nbsp;그게&nbsp;의장으로서의&nbsp;중립적인&nbsp;의장의&nbsp;역할은&nbsp;아니다라는&nbsp;걸&nbsp;저는&nbsp;아주&nbsp;유감스럽게&nbsp;생각합니다.&nbsp;그래서&nbsp;그에&nbsp;대한&nbsp;어떤&nbsp;사과나&nbsp;그런&nbsp;것도&nbsp;따라야&nbsp;된다고&nbsp;생각합니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="21" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;예,&nbsp;잘&nbsp;들었습니다.&nbsp;그런데&nbsp;그&nbsp;부분에&nbsp;대해서&nbsp;우리&nbsp;부위원장님하고&nbsp;의논을&nbsp;하고&nbsp;국민의힘&nbsp;의원들의&nbsp;의견대로&nbsp;통과시켜&nbsp;주면&nbsp;회의를&nbsp;잘&nbsp;협조하겠다는&nbsp;약속을&nbsp;받고&nbsp;통과시켜&nbsp;드렸습니다.&nbsp;그러면&nbsp;되지&nbsp;않습니까?&nbsp;<br>&nbsp;&nbsp;그리고&nbsp;김동수&nbsp;의원님.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="22" data-member_code="08030"><strong>○<a class="member_profile btn_profile" id="btn_profile_183" href="#profile_layer_popup" data-uid="183" title="김동수 의원 프로필 보기">김동수</a> 위원</strong>&nbsp;&nbsp;앞으로,&nbsp;앞으로&nbsp;보겠습니다.&nbsp;<br></div><div class="contents-block speaker-block member-speech" data-con_idx="23" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;잠시만요.&nbsp;일단은&nbsp;지켜주시길&nbsp;부탁드리겠습니다.<br>&nbsp;&nbsp;다음은&nbsp;김영규&nbsp;의원&nbsp;발언하여&nbsp;주시기&nbsp;바랍니다.&nbsp;<br></div><div class="contents-block speaker-block member-speech" data-con_idx="24" data-member_code="09020"><strong>○<a class="member_profile btn_profile" id="btn_profile_187" href="#profile_layer_popup" data-uid="187" title="김영규 의원 프로필 보기">김영규</a> 의원</strong>&nbsp;&nbsp;주제:&nbsp;거제의&nbsp;미래,&nbsp;해양&nbsp;e스포츠·디지털콘텐츠에&nbsp;있다.&nbsp;콘텐츠가&nbsp;관광을&nbsp;만들고,&nbsp;관광이&nbsp;경제를&nbsp;살린다&nbsp;<br>&nbsp;&nbsp;사랑하고&nbsp;존경하는&nbsp;거제시민&nbsp;여러분!&nbsp;<br>&nbsp;&nbsp;안석봉&nbsp;의장님과&nbsp;선배·동료&nbsp;의원&nbsp;여러분!<br>&nbsp;&nbsp;그리고&nbsp;시장님을&nbsp;비롯한&nbsp;공직자&nbsp;여러분,&nbsp;반갑습니다.&nbsp;국민의힘&nbsp;김영규&nbsp;의원입니다.<br>&nbsp;&nbsp;오늘&nbsp;본&nbsp;의원은&nbsp;거제의&nbsp;미래&nbsp;먹거리이자&nbsp;새로운&nbsp;성장동력이&nbsp;될&nbsp;해양&nbsp;e스포츠&nbsp;및&nbsp;디지털콘텐츠&nbsp;산업&nbsp;육성에&nbsp;대해&nbsp;말씀드리고자&nbsp;합니다.<br>&nbsp;&nbsp;대한민국은&nbsp;세계적인&nbsp;IT&nbsp;강국이자&nbsp;콘텐츠&nbsp;강국입니다.&nbsp;게임,&nbsp;e스포츠,&nbsp;유튜브,&nbsp;영상&nbsp;콘텐츠,&nbsp;AI&nbsp;등&nbsp;디지털&nbsp;플랫폼&nbsp;산업은&nbsp;이미&nbsp;세계&nbsp;경제를&nbsp;움직이는&nbsp;거대한&nbsp;산업으로&nbsp;성장했습니다.&nbsp;세계의&nbsp;젊은&nbsp;세대는&nbsp;더&nbsp;이상&nbsp;관광안내서를&nbsp;보고&nbsp;여행지를&nbsp;선택하지&nbsp;않습니다.&nbsp;유튜브를&nbsp;보고,&nbsp;SNS를&nbsp;보고,&nbsp;게임과&nbsp;콘텐츠를&nbsp;보고&nbsp;움직입니다.&nbsp;관광의&nbsp;방식이&nbsp;바뀌고&nbsp;있는&nbsp;것입니다.&nbsp;이제&nbsp;콘텐츠는&nbsp;단순한&nbsp;문화가&nbsp;아니라&nbsp;관광을&nbsp;만들고&nbsp;소비를&nbsp;창출하며&nbsp;지역경제를&nbsp;성장시키는&nbsp;산업이&nbsp;되었습니다.&nbsp;<br>&nbsp;&nbsp;거제는&nbsp;대한민국&nbsp;대표&nbsp;조선해양도시이자&nbsp;세계적인&nbsp;해양관광도시입니다.&nbsp;한화오션과&nbsp;삼성중공업이&nbsp;있고,&nbsp;해금강과&nbsp;외도,&nbsp;매미성,&nbsp;옥포대첩의&nbsp;역사가&nbsp;있으며,&nbsp;세계&nbsp;각국의&nbsp;기술자와&nbsp;선주,&nbsp;바이어가&nbsp;찾는&nbsp;국제도시입니다.&nbsp;그러나&nbsp;우리는&nbsp;여전히&nbsp;조선산업&nbsp;의존도가&nbsp;높고,&nbsp;청년&nbsp;인구&nbsp;유출과&nbsp;관광의&nbsp;계절성이라는&nbsp;과제를&nbsp;안고&nbsp;있습니다.&nbsp;<br>&nbsp;&nbsp;이제&nbsp;거제도&nbsp;새로운&nbsp;성장&nbsp;축을&nbsp;준비해야&nbsp;합니다.&nbsp;본&nbsp;의원은&nbsp;그&nbsp;해답이&nbsp;해양&nbsp;e스포츠&nbsp;및&nbsp;디지털콘텐츠&nbsp;산업에&nbsp;있다고&nbsp;생각합니다.&nbsp;많은&nbsp;분이&nbsp;e스포츠를&nbsp;단순한&nbsp;게임으로&nbsp;생각합니다.&nbsp;그러나&nbsp;오늘날&nbsp;e스포츠는&nbsp;게임을&nbsp;넘어&nbsp;콘텐츠이자&nbsp;관광이며,&nbsp;청년&nbsp;일자리이자&nbsp;미래산업입니다.&nbsp;세계&nbsp;주요&nbsp;도시들은&nbsp;이미&nbsp;e스포츠와&nbsp;디지털콘텐츠&nbsp;산업을&nbsp;활용해&nbsp;관광객을&nbsp;유치하고&nbsp;기업을&nbsp;모으며&nbsp;새로운&nbsp;경제를&nbsp;만들어가고&nbsp;있습니다.&nbsp;특히&nbsp;디지털콘텐츠&nbsp;산업은&nbsp;비교적&nbsp;적은&nbsp;투자로도&nbsp;도시를&nbsp;전국과&nbsp;세계에&nbsp;알릴&nbsp;수&nbsp;있는&nbsp;강력한&nbsp;홍보&nbsp;수단이자&nbsp;산업정책입니다.<br>&nbsp;&nbsp;거제는&nbsp;다른&nbsp;도시가&nbsp;따라&nbsp;할&nbsp;수&nbsp;없는&nbsp;강점을&nbsp;가지고&nbsp;있습니다.&nbsp;이러한&nbsp;자산을&nbsp;콘텐츠로&nbsp;만들고&nbsp;산업으로&nbsp;발전시킨다면,&nbsp;거제는&nbsp;단순한&nbsp;관광도시를&nbsp;넘어&nbsp;대한민국&nbsp;최초의&nbsp;해양&nbsp;e스포츠·디지털콘텐츠&nbsp;도시라는&nbsp;새로운&nbsp;모델을&nbsp;만들&nbsp;수&nbsp;있을&nbsp;것입니다.<br>&nbsp;&nbsp;이를&nbsp;위해&nbsp;본&nbsp;의원은&nbsp;네&nbsp;가지&nbsp;정책을&nbsp;제안합니다.<br>&nbsp;&nbsp;첫째,&nbsp;‘거제시&nbsp;e스포츠·디지털콘텐츠산업&nbsp;육성&nbsp;및&nbsp;지원&nbsp;조례’를&nbsp;제정해야&nbsp;합니다.&nbsp;산업은&nbsp;제도&nbsp;위에서&nbsp;성장합니다.&nbsp;조례를&nbsp;통해&nbsp;중장기&nbsp;발전&nbsp;계획&nbsp;수립,&nbsp;전문인력&nbsp;양성,&nbsp;기업&nbsp;지원,&nbsp;국제&nbsp;교류&nbsp;및&nbsp;관광&nbsp;연계&nbsp;사업의&nbsp;법적&nbsp;기반을&nbsp;마련해야&nbsp;합니다.&nbsp;<br>&nbsp;&nbsp;둘째,&nbsp;거제&nbsp;국제&nbsp;e스포츠&nbsp;및&nbsp;크리에이터&nbsp;페스티벌을&nbsp;추진해야&nbsp;합니다.&nbsp;세계적인&nbsp;게임대회와&nbsp;크리에이터&nbsp;행사를&nbsp;통해&nbsp;거제로&nbsp;유치하여&nbsp;관광과&nbsp;콘텐츠를&nbsp;연결해야&nbsp;합니다.&nbsp;관광객&nbsp;1만&nbsp;명도&nbsp;중요하지만,&nbsp;100만&nbsp;유튜버&nbsp;1명이&nbsp;거제를&nbsp;소개하는&nbsp;파급력&nbsp;또한&nbsp;매우&nbsp;큽니다.&nbsp;콘텐츠를&nbsp;통해&nbsp;거제를&nbsp;세계에&nbsp;알리는&nbsp;새로운&nbsp;전략이&nbsp;필요합니다.<br>&nbsp;&nbsp;셋째,&nbsp;거제&nbsp;e스포츠&nbsp;아카데미&nbsp;및&nbsp;크리에이터&nbsp;스튜디오를&nbsp;조성해야&nbsp;합니다.&nbsp;유튜브&nbsp;및&nbsp;숏폼(Short-form),&nbsp;AI&nbsp;콘텐츠,&nbsp;영상&nbsp;제작,&nbsp;게임&nbsp;개발&nbsp;등&nbsp;디지털콘텐츠&nbsp;교육과&nbsp;창작활동을&nbsp;지원하는&nbsp;공간을&nbsp;마련해야&nbsp;합니다.&nbsp;이는&nbsp;미래&nbsp;인재를&nbsp;양성하는&nbsp;투자가&nbsp;될&nbsp;것입니다.<br>&nbsp;&nbsp;넷째,&nbsp;거제만의&nbsp;해양&nbsp;e스포츠&nbsp;및&nbsp;디지털콘텐츠를&nbsp;개발해야&nbsp;합니다.&nbsp;옥포대첩과&nbsp;이순신&nbsp;장군의&nbsp;역사,&nbsp;조선산업과&nbsp;미래&nbsp;선박&nbsp;기술,&nbsp;해양레저와&nbsp;아름다운&nbsp;섬과&nbsp;바다를&nbsp;활용한&nbsp;게임,&nbsp;웹툰,&nbsp;영상,&nbsp;VR·AR&nbsp;등의&nbsp;콘텐츠를&nbsp;개발해야&nbsp;합니다.&nbsp;세계&nbsp;어느&nbsp;도시도&nbsp;쉽게&nbsp;따라&nbsp;할&nbsp;수&nbsp;없는&nbsp;거제만의&nbsp;경쟁력이&nbsp;될&nbsp;것입니다.<br>&nbsp;&nbsp;존경하는&nbsp;거제&nbsp;시민&nbsp;여러분!<br>&nbsp;&nbsp;조선산업이&nbsp;거제의&nbsp;오늘을&nbsp;만들었다면,&nbsp;해양&nbsp;e스포츠&nbsp;및&nbsp;디지털콘텐츠&nbsp;산업은&nbsp;거제의&nbsp;내일을&nbsp;만들&nbsp;수&nbsp;있습니다.&nbsp;관광객을&nbsp;기다리는&nbsp;도시에서&nbsp;콘텐츠를&nbsp;생산하는&nbsp;도시로,&nbsp;콘텐츠를&nbsp;소비하는&nbsp;도시에서&nbsp;콘텐츠를&nbsp;수출하는&nbsp;도시로,&nbsp;청년이&nbsp;떠나는&nbsp;도시에서&nbsp;청년이&nbsp;모이는&nbsp;도시로&nbsp;변화해야&nbsp;합니다.&nbsp;<br>&nbsp;&nbsp;하나의&nbsp;이야기가&nbsp;게임이&nbsp;되고,&nbsp;웹툰이&nbsp;되고,&nbsp;드라마가&nbsp;되고,&nbsp;영화가&nbsp;되어&nbsp;세계인을&nbsp;움직이는&nbsp;시대입니다.&nbsp;이제&nbsp;우리는&nbsp;관광지를&nbsp;만드는&nbsp;것을&nbsp;넘어,&nbsp;콘텐츠를&nbsp;만드는&nbsp;도시가&nbsp;되어야&nbsp;합니다.&nbsp;그리고&nbsp;그&nbsp;콘텐츠가&nbsp;다시&nbsp;관광객을&nbsp;부르고,&nbsp;지역경제를&nbsp;살리고,&nbsp;청년의&nbsp;일자리를&nbsp;만드는&nbsp;선순환&nbsp;구조를&nbsp;만들어야&nbsp;합니다.&nbsp;대한민국&nbsp;해양산업관광수도&nbsp;거제,&nbsp;이제는&nbsp;대한민국&nbsp;최초의&nbsp;해양&nbsp;e스포츠&nbsp;및&nbsp;디지털콘텐츠&nbsp;도시를&nbsp;준비해야&nbsp;합니다.&nbsp;<br>&nbsp;&nbsp;시장님과&nbsp;집행부에서도&nbsp;중장기계획&nbsp;수립과&nbsp;제도를&nbsp;통해&nbsp;거제의&nbsp;미래&nbsp;산업을&nbsp;위해&nbsp;적극적인&nbsp;관심과&nbsp;추진을&nbsp;당부드리겠습니다.&nbsp;<br>&nbsp;&nbsp;이상&nbsp;5분&nbsp;자유발언을&nbsp;마치겠습니다.&nbsp;경청해&nbsp;주셔서&nbsp;감사합니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="25" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;김영규&nbsp;의원&nbsp;수고하셨습니다.<br>&nbsp;&nbsp;의사일정에&nbsp;따라&nbsp;의안을&nbsp;상정하도록&nbsp;하겠습니다.&nbsp;<br>&nbsp;&nbsp;의사일정은&nbsp;배부해&nbsp;드린&nbsp;유인물을&nbsp;참고하여&nbsp;주시기&nbsp;바랍니다.<br><hr></div><div class="contents-block" data-con_idx="26"><strong class="item-in-contents" id="item2" title="1. 제264회 거제시의회 임시회 회기 결정의 건">1.&nbsp;제264회&nbsp;거제시의회&nbsp;임시회&nbsp;회기&nbsp;결정의&nbsp;건</strong>&nbsp;<a href="#" class="go-to-top" title="처음으로"><i class="fa fas fa-arrow-circle-up"></i></a><br><p class="taged-line tag-R">(10시 42분)</p></div><div class="contents-block speaker-block member-speech" data-con_idx="27" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;제1항&nbsp;제264회&nbsp;거제시의회&nbsp;임시회&nbsp;회기&nbsp;결정의&nbsp;건을&nbsp;상정합니다.&nbsp;<br>&nbsp;&nbsp;이번&nbsp;임시회는&nbsp;예산안&nbsp;등을&nbsp;심의·의결하기&nbsp;위하여&nbsp;오늘부터&nbsp;7월&nbsp;31일까지&nbsp;12일간의&nbsp;회기로&nbsp;결정하고자&nbsp;합니다.&nbsp;<br>&nbsp;&nbsp;회기&nbsp;결정의&nbsp;건에&nbsp;대하여&nbsp;질의하실&nbsp;의원께서는&nbsp;질의해&nbsp;주시기&nbsp;바랍니다.<br>&nbsp;&nbsp;질의&nbsp;없습니까?<br><p class="taged-line tag-R">(“예” 하는 의원 있음)</p>&nbsp;&nbsp;질의가&nbsp;없으므로&nbsp;질의&nbsp;종결을&nbsp;선포합니다.&nbsp;<br>&nbsp;&nbsp;다음은&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;토론하실&nbsp;의원님&nbsp;계십니까?<br><p class="taged-line tag-R">(“없습니다” 하는 의원 있음)</p>&nbsp;&nbsp;토론하실&nbsp;의원님이&nbsp;없으므로&nbsp;토론&nbsp;종결을&nbsp;선포합니다.<br>&nbsp;&nbsp;그럼&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;가·부를&nbsp;결정토록&nbsp;하겠습니다.&nbsp;<br>&nbsp;&nbsp;제1항&nbsp;제264회&nbsp;거제시의회&nbsp;임시회&nbsp;회기&nbsp;결정의&nbsp;건을&nbsp;가결하고자&nbsp;하는데&nbsp;이의&nbsp;없습니까?<br><p class="taged-line tag-R">(“예” 하는 의원 있음)</p>&nbsp;&nbsp;이의가&nbsp;없으므로&nbsp;가결되었음을&nbsp;선포합니다.&nbsp;<br><hr></div><div class="contents-block" data-con_idx="28"><strong class="item-in-contents" id="item3" title="2. 회의록 서명의원 선출의 건">2.&nbsp;회의록&nbsp;서명의원&nbsp;선출의&nbsp;건</strong>&nbsp;<a href="#" class="go-to-top" title="처음으로"><i class="fa fas fa-arrow-circle-up"></i></a><br><p class="taged-line tag-R">(10시 43분)</p></div><div class="contents-block speaker-block member-speech" data-con_idx="29" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;제2항&nbsp;회의록&nbsp;서명의원&nbsp;선출의&nbsp;건을&nbsp;상정합니다.<br>&nbsp;&nbsp;&nbsp;이번&nbsp;회의록&nbsp;서명의원은&nbsp;의석&nbsp;순서에&nbsp;따라&nbsp;윤현아&nbsp;의원,&nbsp;옥은림&nbsp;의원으로&nbsp;선출하고자&nbsp;합니다.&nbsp;<br>&nbsp;&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;질의하실&nbsp;의원께서는&nbsp;질의해&nbsp;주시기&nbsp;바랍니다.<br>&nbsp;&nbsp;질의&nbsp;없습니까?<br><p class="taged-line tag-R">(“예” 하는 의원 있음)</p>&nbsp;&nbsp;질의가&nbsp;없으므로&nbsp;질의&nbsp;종결을&nbsp;선포합니다.&nbsp;<br>&nbsp;&nbsp;다음은&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;토론하실&nbsp;의원님&nbsp;계십니까?<br><p class="taged-line tag-R">(“없습니다” 하는 의원 있음)</p>&nbsp;&nbsp;토론하실&nbsp;의원님이&nbsp;없으므로&nbsp;토론&nbsp;종결을&nbsp;선포합니다.&nbsp;<br>&nbsp;&nbsp;그럼&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;가·부를&nbsp;결정토록&nbsp;하겠습니다.<br>&nbsp;&nbsp;제2항&nbsp;회의록&nbsp;서명의원&nbsp;선출의&nbsp;건을&nbsp;가결하고자&nbsp;하는데&nbsp;이의&nbsp;없습니까?<br><p class="taged-line tag-R">(“예” 하는 의원 있음)</p>&nbsp;&nbsp;이의가&nbsp;없으므로&nbsp;가결되었음을&nbsp;선포합니다.&nbsp;<br><hr></div><div class="contents-block" data-con_idx="30"><strong class="item-in-contents" id="item4" title="3. 2026년도 제1회 추가경정 세입·세출 예산안 제안 설명의 건">3.&nbsp;2026년도&nbsp;제1회&nbsp;추가경정&nbsp;세입·세출&nbsp;예산안&nbsp;제안&nbsp;설명의&nbsp;건</strong>&nbsp;<a href="#" class="go-to-top" title="처음으로"><i class="fa fas fa-arrow-circle-up"></i></a><br><p class="taged-line tag-R">(10시 44분)</p></div><div class="contents-block speaker-block member-speech" data-con_idx="31" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;제3항&nbsp;2026년도&nbsp;제1회&nbsp;추가경정&nbsp;세입·세출&nbsp;예산안&nbsp;제안&nbsp;설명의&nbsp;건을&nbsp;상정합니다.<br>&nbsp;&nbsp;부시장님&nbsp;나오셔서&nbsp;제안설명&nbsp;해주시기&nbsp;바랍니다.&nbsp;<br></div><div class="contents-block speaker-block" data-con_idx="32" data-member_code=""><strong>○부시장 민기식</strong>&nbsp;&nbsp;안녕하십니까.&nbsp;부시장&nbsp;민기식입니다.<br>&nbsp;&nbsp;먼저&nbsp;제10대&nbsp;거제시의회의&nbsp;새로운&nbsp;출발을&nbsp;진심으로&nbsp;축하드립니다.&nbsp;안석봉&nbsp;의장님과&nbsp;여러&nbsp;의원님께도&nbsp;다시&nbsp;한&nbsp;번&nbsp;축하의&nbsp;말씀을&nbsp;전하며,&nbsp;앞으로&nbsp;의회와&nbsp;집행부가&nbsp;함께&nbsp;힘을&nbsp;합쳐&nbsp;거제의&nbsp;발전과&nbsp;시민의&nbsp;행복이라는&nbsp;공동의&nbsp;목표를&nbsp;달성할&nbsp;수&nbsp;있도록&nbsp;시정에&nbsp;아낌없는&nbsp;성원과&nbsp;협조를&nbsp;보내주시면&nbsp;감사하겠습니다.<br>&nbsp;&nbsp;오늘&nbsp;제안&nbsp;드리는&nbsp;제1회&nbsp;추가경정예산안은&nbsp;민선&nbsp;9기를&nbsp;본격적으로&nbsp;추진하기&nbsp;위한&nbsp;첫걸음이자&nbsp;새로운&nbsp;도약을&nbsp;위한&nbsp;마중물로&nbsp;시민이&nbsp;체감하는&nbsp;민생&nbsp;회복과&nbsp;생활불편&nbsp;해소,&nbsp;지역경제&nbsp;활성화를&nbsp;최우선에&nbsp;두고&nbsp;편성하였습니다.&nbsp;조선업&nbsp;회복세가&nbsp;지역경제&nbsp;전반으로&nbsp;확산될&nbsp;수&nbsp;있도록&nbsp;지역&nbsp;활력을&nbsp;높이고,&nbsp;시민&nbsp;생활과&nbsp;직결되는&nbsp;시급한&nbsp;현안에&nbsp;적극&nbsp;대응하는&nbsp;한편,&nbsp;앞으로&nbsp;거제&nbsp;대도약을&nbsp;위한&nbsp;기반을&nbsp;마련코자&nbsp;하였습니다.<br>&nbsp;&nbsp;그럼&nbsp;지금부터&nbsp;제1회&nbsp;추가경정예산안에&nbsp;대하여&nbsp;세부적으로&nbsp;설명드리겠습니다.&nbsp;배부해&nbsp;드린&nbsp;제안설명서를&nbsp;참고하여&nbsp;주시기&nbsp;바랍니다.<br>&nbsp;&nbsp;먼저&nbsp;3페이지&nbsp;예산안&nbsp;총규모입니다.&nbsp;제1회&nbsp;추경예산&nbsp;규모는&nbsp;1조&nbsp;4305억&nbsp;9800만&nbsp;원으로,&nbsp;당초예산&nbsp;대비&nbsp;923억&nbsp;6000만&nbsp;원이&nbsp;증가하였습니다.&nbsp;회계별로&nbsp;보면&nbsp;일반회계는&nbsp;고유가피해지원금&nbsp;280억&nbsp;원,&nbsp;경남도민&nbsp;생활지원금&nbsp;235억&nbsp;원,&nbsp;행복어울림센터&nbsp;건립&nbsp;76억&nbsp;원&nbsp;등&nbsp;1012억&nbsp;7300만&nbsp;원이&nbsp;증액된&nbsp;1조&nbsp;3122억&nbsp;2100만&nbsp;원입니다.&nbsp;특별회계는&nbsp;89억&nbsp;1300만&nbsp;원&nbsp;감액된&nbsp;1183억&nbsp;7700만&nbsp;원으로&nbsp;편성하였습니다.&nbsp;<br>&nbsp;&nbsp;다음은&nbsp;4페이지,&nbsp;일반회계&nbsp;세입·세출예산안입니다.&nbsp;예산액은&nbsp;1조&nbsp;3122억&nbsp;2100만&nbsp;원으로,&nbsp;세입내역은&nbsp;지방세수입&nbsp;155억&nbsp;원,&nbsp;세외수입&nbsp;85억&nbsp;4700만&nbsp;원,&nbsp;지방교부세등&nbsp;49억&nbsp;5300만&nbsp;원,&nbsp;조정교부금등&nbsp;32억&nbsp;7700만&nbsp;원,&nbsp;보조금&nbsp;456억&nbsp;9600만&nbsp;원,&nbsp;보전수입등및내부거래&nbsp;233억&nbsp;원&nbsp;증가하였습니다.&nbsp;세출내역은&nbsp;정책사업&nbsp;981억&nbsp;5200만&nbsp;원,&nbsp;재무활동&nbsp;51억&nbsp;4600만&nbsp;원&nbsp;증가하였으며,&nbsp;행정운영경비&nbsp;20억&nbsp;2500만&nbsp;원&nbsp;감소하였습니다.<br>&nbsp;&nbsp;이어서&nbsp;기타&nbsp;특별회계&nbsp;세입·세출예산안입니다.&nbsp;예산액은&nbsp;55억&nbsp;5600만&nbsp;원으로,&nbsp;세입내역은&nbsp;세외수입&nbsp;6900만&nbsp;원,&nbsp;보조금&nbsp;800만&nbsp;원,&nbsp;보전수입등및내부거래&nbsp;1억&nbsp;4400만&nbsp;원&nbsp;각각&nbsp;감소하였습니다.&nbsp;세출내역은&nbsp;정책사업&nbsp;2500만&nbsp;원,&nbsp;행정운영경비&nbsp;300만&nbsp;원,&nbsp;재무활동&nbsp;1억&nbsp;9300만&nbsp;원&nbsp;각각&nbsp;감소하였습니다.<br>&nbsp;&nbsp;끝으로&nbsp;5페이지,&nbsp;공기업&nbsp;특별회계&nbsp;세입·세출안입니다.&nbsp;예산액은&nbsp;1128억&nbsp;2100만&nbsp;원으로,&nbsp;세입내역은&nbsp;보조금&nbsp;155억&nbsp;1800만&nbsp;원&nbsp;감소하였으며,&nbsp;보전수입등및내부거래&nbsp;68억&nbsp;2600만&nbsp;원&nbsp;증가하였습니다.<br>&nbsp;&nbsp;세출내역입니다.&nbsp;정책사업&nbsp;107억&nbsp;5500만&nbsp;원&nbsp;감소하였으며,&nbsp;행정운영경비&nbsp;3100만&nbsp;원,&nbsp;재무활동&nbsp;20억&nbsp;3200만&nbsp;원&nbsp;각각&nbsp;증가하였습니다.&nbsp;<br>&nbsp;&nbsp;존경하는&nbsp;의장님&nbsp;그리고&nbsp;의원&nbsp;여러분!<br>&nbsp;&nbsp;이번&nbsp;추경예산안은&nbsp;민생&nbsp;회복을&nbsp;앞당기고,&nbsp;지역&nbsp;현안을&nbsp;해결하며,&nbsp;거제의&nbsp;새로운&nbsp;성장&nbsp;기반을&nbsp;마련하기&nbsp;위한&nbsp;마중물이&nbsp;될&nbsp;것입니다.&nbsp;민선9기&nbsp;시정&nbsp;철학인&nbsp;통합과&nbsp;상생의&nbsp;정신을&nbsp;바탕으로&nbsp;앞으로도&nbsp;시민의&nbsp;목소리를&nbsp;최우선으로&nbsp;삼고,&nbsp;꼭&nbsp;필요한&nbsp;곳에&nbsp;적기에&nbsp;재정을&nbsp;투입하여&nbsp;시민이&nbsp;체감하는&nbsp;변화를&nbsp;만들어&nbsp;가도록&nbsp;적극&nbsp;노력하겠습니다.&nbsp;<br>&nbsp;&nbsp;의원님들의&nbsp;깊은&nbsp;이해와&nbsp;협조를&nbsp;부탁드리며,&nbsp;제1회&nbsp;추가경정예산안을&nbsp;원안대로&nbsp;의결하여&nbsp;주실&nbsp;것을&nbsp;부탁드립니다.&nbsp;<br>&nbsp;&nbsp;이상으로&nbsp;2026년&nbsp;제1회&nbsp;추가경정예산안에&nbsp;대한&nbsp;제안&nbsp;설명을&nbsp;모두&nbsp;마치겠습니다.&nbsp;감사합니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="33" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;부시장님&nbsp;수고하셨습니다.<br><hr></div><div class="contents-block" data-con_idx="34"><strong class="item-in-contents" id="item5" title="4. 예산결산특별위원회 구성의 건">4.&nbsp;예산결산특별위원회&nbsp;구성의&nbsp;건</strong>&nbsp;<a href="#" class="go-to-top" title="처음으로"><i class="fa fas fa-arrow-circle-up"></i></a><br><p class="taged-line tag-R">(10시 49분)</p></div><div class="contents-block speaker-block member-speech" data-con_idx="35" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;제4항&nbsp;예산결산특별위원회&nbsp;구성의&nbsp;건을&nbsp;상정합니다.<br>&nbsp;&nbsp;본&nbsp;안건은&nbsp;2026년도&nbsp;제1회&nbsp;추경&nbsp;예산안을&nbsp;심사하기&nbsp;위하여&nbsp;「거제시의회&nbsp;위원회&nbsp;조례」&nbsp;제7조의2에&nbsp;따라&nbsp;예산결산특별위원회를&nbsp;구성하고자&nbsp;하는&nbsp;것입니다.<br>&nbsp;&nbsp;특별위원회&nbsp;구성은&nbsp;각&nbsp;상임위원회에서&nbsp;추천된&nbsp;위원&nbsp;현황을&nbsp;참고하여&nbsp;주시고,&nbsp;위원&nbsp;수는&nbsp;7명으로&nbsp;하며,&nbsp;위원장에&nbsp;김동수&nbsp;의원,&nbsp;부위원장에&nbsp;노재하&nbsp;의원,&nbsp;위원으로&nbsp;한은진&nbsp;의원,&nbsp;이재순&nbsp;의원,&nbsp;신수정&nbsp;의원,&nbsp;임수환&nbsp;의원,&nbsp;이미숙&nbsp;의원으로&nbsp;하고,&nbsp;활동기간은&nbsp;오늘부터&nbsp;7월&nbsp;31일까지&nbsp;12일간으로&nbsp;하고자&nbsp;합니다.<br>&nbsp;&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;질의하실&nbsp;의원께서는&nbsp;질의해&nbsp;주시기&nbsp;바랍니다.<br>&nbsp;&nbsp;질의&nbsp;없습니까?<br><p class="taged-line tag-R">(“예” 하는 의원 있음)</p>&nbsp;&nbsp;질의가&nbsp;없으므로&nbsp;질의&nbsp;종결을&nbsp;선포합니다.&nbsp;<br>&nbsp;&nbsp;다음은&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;토론하실&nbsp;의원님&nbsp;계십니까?&nbsp;<br><p class="taged-line tag-R">(“없습니다” 하는 의원 있음)</p>&nbsp;&nbsp;토론하실&nbsp;의원님이&nbsp;없으므로&nbsp;토론&nbsp;종결을&nbsp;선포합니다.<br>&nbsp;&nbsp;그럼&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;가·부를&nbsp;결정토록&nbsp;하겠습니다.<br>&nbsp;&nbsp;제4항&nbsp;예산결산특별위원회&nbsp;구성의&nbsp;건을&nbsp;가결하고자&nbsp;하는데&nbsp;이의&nbsp;없습니까?<br><p class="taged-line tag-R">(“예” 하는 의원 있음)</p>&nbsp;&nbsp;이의가&nbsp;없으므로&nbsp;가결되었음을&nbsp;선포합니다.&nbsp;<br><hr></div><div class="contents-block" data-con_idx="36"><strong class="item-in-contents" id="item6" title="5. 2026년도 행정사무감사 계획서 승인의 건">5.&nbsp;2026년도&nbsp;행정사무감사&nbsp;계획서&nbsp;승인의&nbsp;건</strong>&nbsp;<a href="#" class="go-to-top" title="처음으로"><i class="fa fas fa-arrow-circle-up"></i></a><br><p class="taged-line tag-R">(10시 51분)</p></div><div class="contents-block speaker-block member-speech" data-con_idx="37" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;제5항&nbsp;2026년도&nbsp;행정사무감사&nbsp;계획서&nbsp;승인의&nbsp;건을&nbsp;상정합니다.<br>&nbsp;&nbsp;의회운영위원장님,&nbsp;제안설명해&nbsp;주시기&nbsp;바랍니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="38" data-member_code="09040"><strong>○의회운영위원장 <a class="member_profile btn_profile" id="btn_profile_185" href="#profile_layer_popup" data-uid="185" title="이미숙 의원 프로필 보기">이미숙</a></strong>&nbsp;&nbsp;반갑습니다.&nbsp;의회운영위원장&nbsp;이미숙입니다.<br>&nbsp;&nbsp;지금부터&nbsp;2026년도&nbsp;행정사무감사&nbsp;계획서&nbsp;승인의&nbsp;건에&nbsp;대하여&nbsp;제안설명&nbsp;드리겠습니다.<br>&nbsp;&nbsp;본&nbsp;안건은&nbsp;「지방자치법」&nbsp;제49조와&nbsp;같은&nbsp;법&nbsp;시행령&nbsp;제41조~제54조,&nbsp;「거제시의회&nbsp;행정사무감사&nbsp;및&nbsp;조사에&nbsp;관한&nbsp;조례」&nbsp;제2조에&nbsp;따라&nbsp;상임위원회가&nbsp;감사계획서를&nbsp;작성하고,&nbsp;의회운영위원회와&nbsp;협의를&nbsp;거쳐&nbsp;본회의에&nbsp;승인을&nbsp;요구하는&nbsp;안건입니다.<br>&nbsp;&nbsp;이번&nbsp;행정사무감사&nbsp;계획은&nbsp;제263회&nbsp;임시회&nbsp;폐회중&nbsp;기간에&nbsp;각&nbsp;상임위원회별로&nbsp;작성&nbsp;후&nbsp;의회운영위원회에&nbsp;상정하여&nbsp;의결하였습니다.<br>&nbsp;&nbsp;감사의&nbsp;목적은&nbsp;거제시&nbsp;및&nbsp;소속&nbsp;행정기관과&nbsp;하부&nbsp;행정기관&nbsp;등의&nbsp;운영&nbsp;실태를&nbsp;파악하고&nbsp;의정활동과&nbsp;예산심사&nbsp;등에&nbsp;필요한&nbsp;자료&nbsp;및&nbsp;정보를&nbsp;획득하며,&nbsp;행정의&nbsp;잘못된&nbsp;부분을&nbsp;시정&nbsp;요구함으로써&nbsp;효율적이고&nbsp;발전적인&nbsp;시정을&nbsp;도모하기&nbsp;위함입니다.<br>&nbsp;&nbsp;감사기간은&nbsp;제1차&nbsp;정례회&nbsp;기간&nbsp;중&nbsp;2026년&nbsp;9월&nbsp;8일부터&nbsp;9월&nbsp;16일까지&nbsp;9일간으로&nbsp;하며,&nbsp;감사대상&nbsp;기관은&nbsp;①&nbsp;거제시&nbsp;②&nbsp;거제시&nbsp;소속&nbsp;행정기관&nbsp;및&nbsp;하부행정기관&nbsp;③&nbsp;거제시가&nbsp;설치한&nbsp;지방공기업&nbsp;④「지방자치법」&nbsp;제117조에&nbsp;따라&nbsp;위임&nbsp;또는&nbsp;위탁된&nbsp;사무를&nbsp;처리하는&nbsp;단체&nbsp;또는&nbsp;기관&nbsp;⑤「지방자치단체&nbsp;출자·출연&nbsp;기관의&nbsp;운영에&nbsp;관한&nbsp;법률」&nbsp;제2조제1항에&nbsp;따른&nbsp;출자·출연&nbsp;기관&nbsp;중&nbsp;거제시가&nbsp;4분의&nbsp;1&nbsp;이상&nbsp;출자하거나&nbsp;출연한&nbsp;법인입니다.<br>&nbsp;&nbsp;감사대상&nbsp;목록,&nbsp;감사위원회&nbsp;편성,&nbsp;감사일정&nbsp;및&nbsp;장소&nbsp;등&nbsp;자세한&nbsp;사항은&nbsp;배부해&nbsp;드린&nbsp;감사계획서를&nbsp;참고하여&nbsp;주시기&nbsp;바랍니다.&nbsp;<br>&nbsp;&nbsp;이상으로&nbsp;2026년도&nbsp;행정사무감사&nbsp;계획서&nbsp;승인의&nbsp;건에&nbsp;대하여&nbsp;제안한&nbsp;내용대로&nbsp;승인하여&nbsp;주시기를&nbsp;당부드리면서&nbsp;제안&nbsp;설명을&nbsp;마치겠습니다.&nbsp;감사합니다.<br></div><div class="contents-block speaker-block member-speech" data-con_idx="39" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;수고하셨습니다.<br>&nbsp;&nbsp;의회운영위원장의&nbsp;제안설명에&nbsp;대하여&nbsp;질의하실&nbsp;의원께서는&nbsp;질의해&nbsp;주시기&nbsp;바랍니다.<br>&nbsp;&nbsp;질의&nbsp;없습니까?<br><p class="taged-line tag-R">(“예” 하는 의원 있음)</p>&nbsp;&nbsp;질의가&nbsp;없으므로&nbsp;질의&nbsp;종결을&nbsp;선포합니다.&nbsp;<br>&nbsp;&nbsp;다음은&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;토론하실&nbsp;의원님&nbsp;계십니까?<br><p class="taged-line tag-R">(“없습니다” 하는 의원 있음)</p>&nbsp;&nbsp;토론하실&nbsp;의원님이&nbsp;없으므로&nbsp;토론&nbsp;종결을&nbsp;선포합니다.&nbsp;<br>&nbsp;&nbsp;그럼&nbsp;본&nbsp;안건에&nbsp;대하여&nbsp;가부를&nbsp;결정토록&nbsp;하겠습니다.<br>&nbsp;&nbsp;제5항&nbsp;2026년도&nbsp;행정사무감사&nbsp;계획서&nbsp;승인의&nbsp;건을&nbsp;의회운영위원장이&nbsp;제안설명한&nbsp;대로&nbsp;가결하고자&nbsp;하는데&nbsp;이의&nbsp;없습니까?<br><p class="taged-line tag-R">(“예” 하는 의원 있음)</p>&nbsp;&nbsp;이의가&nbsp;없으므로&nbsp;가결되었음을&nbsp;선포합니다.<br><hr></div><div class="contents-block" data-con_idx="40"><strong class="item-in-contents" id="item7" title="6. 휴회의 건">6.&nbsp;휴회의&nbsp;건</strong>&nbsp;<a href="#" class="go-to-top" title="처음으로"><i class="fa fas fa-arrow-circle-up"></i></a><br><p class="taged-line tag-R">(10시 55분)</p></div><div class="contents-block speaker-block member-speech" data-con_idx="41" data-member_code="08080"><strong>○의장 <a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></strong>&nbsp;&nbsp;제6항&nbsp;휴회의&nbsp;건을&nbsp;상정합니다.<br>&nbsp;&nbsp;상임위원회&nbsp;및&nbsp;특별위원회&nbsp;활동&nbsp;등을&nbsp;위하여&nbsp;7월&nbsp;30일까지&nbsp;본회의를&nbsp;휴회하고자&nbsp;하는데&nbsp;이의&nbsp;없습니까?<br><p class="taged-line tag-R">(“예” 하는 의원 있음)</p>&nbsp;&nbsp;이의가&nbsp;없으므로&nbsp;가결되었음을&nbsp;선포합니다.<br>&nbsp;&nbsp;이상으로&nbsp;오늘&nbsp;회의를&nbsp;모두&nbsp;마치겠습니다.&nbsp;제2차&nbsp;본회의는&nbsp;7월&nbsp;31일&nbsp;오전&nbsp;10시에&nbsp;개의하겠습니다.<br>&nbsp;&nbsp;산회를&nbsp;선포합니다.&nbsp;<br><p class="taged-line tag-R">(10시 55분  산회)</p></div></div><hr><div id="minutes-footer"><p class="font-bold attend-head-line" id="attend-member-head-line">○출석의원(16인)-선거구순</p><p class="attend-line attend-member-line"><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_188" href="#profile_layer_popup" data-uid="188" title="김경습 의원 프로필 보기">김경습</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_183" href="#profile_layer_popup" data-uid="183" title="김동수 의원 프로필 보기">김동수</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_191" href="#profile_layer_popup" data-uid="191" title="김미영 의원 프로필 보기">김미영</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_187" href="#profile_layer_popup" data-uid="187" title="김영규 의원 프로필 보기">김영규</a></span></p><p class="attend-line attend-member-line"><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_179" href="#profile_layer_popup" data-uid="179" title="노재하 의원 프로필 보기">노재하</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_194" href="#profile_layer_popup" data-uid="194" title="신수정 의원 프로필 보기">신수정</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_182" href="#profile_layer_popup" data-uid="182" title="안석봉 의원 프로필 보기">안석봉</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_189" href="#profile_layer_popup" data-uid="189" title="옥은림 의원 프로필 보기">옥은림</a></span></p><p class="attend-line attend-member-line"><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_190" href="#profile_layer_popup" data-uid="190" title="윤현아 의원 프로필 보기">윤현아</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_185" href="#profile_layer_popup" data-uid="185" title="이미숙 의원 프로필 보기">이미숙</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_193" href="#profile_layer_popup" data-uid="193" title="이재순 의원 프로필 보기">이재순</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_184" href="#profile_layer_popup" data-uid="184" title="이태열 의원 프로필 보기">이태열</a></span></p><p class="attend-line attend-member-line"><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_180" href="#profile_layer_popup" data-uid="180" title="임수환 의원 프로필 보기">임수환</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_181" href="#profile_layer_popup" data-uid="181" title="최양희 의원 프로필 보기">최양희</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_192" href="#profile_layer_popup" data-uid="192" title="추인호 의원 프로필 보기">추인호</a></span><span class="attend-member"><a class="member_profile btn_profile" id="btn_profile_186" href="#profile_layer_popup" data-uid="186" title="한은진 의원 프로필 보기">한은진</a></span></p><hr><p class="font-bold attend-head-line">○출석전문위원</p><p class="attend-line">문선의&nbsp;&nbsp;김정숙&nbsp;&nbsp;박미선</p><hr><p class="font-bold attend-head-line">○출석공무원</p><p class="attend-line">시장&nbsp;&nbsp;변광용</p><p class="attend-line">부시장&nbsp;&nbsp;민기식</p><p class="attend-line">경제해양국장&nbsp;&nbsp;신상옥</p><p class="attend-line">문화관광국장&nbsp;&nbsp;옥주원</p><p class="attend-line">복지국장&nbsp;&nbsp;서미경</p><p class="attend-line">도시정책국장&nbsp;&nbsp;김천식</p><p class="attend-line">안전건설국장&nbsp;&nbsp;박무석</p><p class="attend-line">환경녹지국장&nbsp;&nbsp;박미순</p><p class="attend-line">행정국장&nbsp;&nbsp;김호근</p><p class="attend-line">보건소장&nbsp;김영실</p><p class="attend-line">농업기술센터소장&nbsp;&nbsp;이영실</p><p class="attend-line">시민공감실장&nbsp;&nbsp;강신혜</p><p class="attend-line">기획실장&nbsp;&nbsp;차정명</p><p class="attend-line">예산실장&nbsp;&nbsp;신현숙</p><p class="attend-line">감사실장&nbsp;&nbsp;이정만</p><p class="attend-line">홍보실장&nbsp;&nbsp;박경민</p><p class="attend-line">민생경제과장&nbsp;&nbsp;김희정</p><p class="attend-line">조선지원과장&nbsp;&nbsp;김옥연</p><p class="attend-line">해양항만과장&nbsp;&nbsp;박원석</p><p class="attend-line">수산과장&nbsp;&nbsp;노재평</p><p class="attend-line">어촌발전과장&nbsp;&nbsp;주성조</p><p class="attend-line">문화예술과장&nbsp;&nbsp;송황</p><p class="attend-line">관광과장&nbsp;&nbsp;전제종</p><p class="attend-line">체육지원과장&nbsp;&nbsp;백성철</p><p class="attend-line">위생과장&nbsp;&nbsp;빈연화</p><p class="attend-line">사회복지과장&nbsp;&nbsp;반희순</p><p class="attend-line">아동청소년과장&nbsp;&nbsp;주현지</p><p class="attend-line">노인장애인과장&nbsp;&nbsp;강승필</p><p class="attend-line">가족정책과장&nbsp;&nbsp;나정민</p><p class="attend-line">평생교육과장&nbsp;&nbsp;백승정</p><p class="attend-line">도시계획과장&nbsp;&nbsp;곽병재</p><p class="attend-line">투자지원과장&nbsp;&nbsp;전덕양</p><p class="attend-line">허가과장&nbsp;&nbsp;윤계원</p><p class="attend-line">건축과장&nbsp;&nbsp;정준식</p><p class="attend-line">토지정보과장&nbsp;&nbsp;옥차영</p><p class="attend-line">시민안전과장&nbsp;&nbsp;이문기</p><p class="attend-line">재난대응과장&nbsp;&nbsp;임우정</p><p class="attend-line">건설지원과장&nbsp;&nbsp;곽성립</p><p class="attend-line">교통과장&nbsp;&nbsp;제윤재</p><p class="attend-line">도로과장&nbsp;&nbsp;반성영</p><p class="attend-line">자원순환과장&nbsp;&nbsp;이동성</p><p class="attend-line">기후환경과장&nbsp;&nbsp;반충수</p><p class="attend-line">상하수도과장&nbsp;&nbsp;김성기</p><p class="attend-line">산림과장&nbsp;&nbsp;서진교</p><p class="attend-line">공원과장&nbsp;&nbsp;손행석</p><p class="attend-line">행정과장&nbsp;&nbsp;정태진</p><p class="attend-line">세무과장&nbsp;&nbsp;김남주</p><p class="attend-line">납세과장&nbsp;&nbsp;김상준</p><p class="attend-line">회계과장&nbsp;&nbsp;강은희</p><p class="attend-line">민원과장&nbsp;&nbsp;김명숙</p><p class="attend-line">정보통신과장&nbsp;&nbsp;옥동규</p><p class="attend-line">보건과장&nbsp;&nbsp;김선희</p><p class="attend-line">건강증진과장&nbsp;&nbsp;강미정</p><p class="attend-line">감염관리과장&nbsp;&nbsp;김향아</p><p class="attend-line">농업정책과장&nbsp;&nbsp;윤명수</p><p class="attend-line">농식품유통과장&nbsp;&nbsp;채문환</p><p class="attend-line">농업지원과장&nbsp;&nbsp;김성현</p><p class="attend-line">하수운영사업소장&nbsp;&nbsp;서재삼</p></div></div></div>
+    </div>
+</div>
+	</div>
+	
+
+
+<!-- 레이어 프로필 팝업-->
+<div class="pop_profile" id="profile_layer_popup">
+    <input type="hidden" id="profile_hidden_uid" name="profile_hidden_uid" value="">
+    <div class="tit">
+        <h1>거제시의회 의원프로필</h1>
+        <div class="btn_p_close"><a href="javascript:document.getElementById('profile_layer_popup').focus();" title="창을 닫습니다.">창닫기</a></div>
+    </div>
+    <div class="info">
+        <div class="pic_wrap">
+            <div class="pic">
+                <p class="member_profile_image"><img src="/images/kr/main/pic_member1.jpg" alt="홍길동"></p>
+                <p class="name"></p>
+            </div>
+            <ul class="detail">
+                
+            </ul>
+        </div>
+        <div class="career">
+            <h2>학력사항 및 경력사항</h2>
+            <div class="list" tabindex="0">
+                <strong>&lt;학력사항&gt;</strong>
+                <ul class="dash">
+                    
+                </ul>
+                <strong>&lt;경력사항&gt;</strong>
+                <ul class="dash">
+                    
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="btn_p_close"><a href="javascript:document.getElementById('profile_layer_popup').focus();" title="창을 닫습니다.">x close</a></div>
+</div>
+	<div class="mask"></div>
+	<script type="text/javascript" defer="" async="" src="https://www.gjcl.go.kr/assets/plugins/visitantjs/visitant.min.js"></script><script src="/material/plugins/jquery/jquery.min.js"></script>
+	<script src="/material/plugins/bootstrap/js/bootstrap.js"></script>
+	<script src="/material/plugins/bootstrap-select/js/bootstrap-select.js"></script>
+	<script src="/material/plugins/jquery-slimscroll/jquery.slimscroll.js"></script>
+	
+	<script src="/material/plugins/node-waves/waves.js"></script>
+	
+	<script src="/material/plugins/jquery-countto/jquery.countTo.js"></script>
+	<script src="/material/plugins/raphael/raphael.min.js"></script>
+	<script src="/material/plugins/morrisjs/morris.js"></script>
+	<script src="/material/plugins/jquery-sparkline/jquery.sparkline.js"></script>
+	<script src="/assets/plugins/jquery-print/jQuery.print.js"></script>
+	<script src="/assets/plugins/mark.js/jquery.mark.min.js"></script>
+	
+	<script src="/material/js/admin.js"></script>
+	
+	
+	<script>
+        const conf = {"cl_cd":"CT","th":10,"half":"F","cl_nm":"거제시","cl_abbr_nm":"거제시","cl_full_nm":"거제시","en_nm":"GEOJE","cn_nm":"巨济市议会","jp_nm":"コジェ市議会","units_nm":"시","gvmt_head":"장","addr":"(53257) 경상남도 거제시 계룡로 125 (고현동)","addr_en":"Gyeongsangnam-do Geoje city Gyeryong-ro 125(Gohyun-dong 717)","addr_cn":"","addr_jp":"","copyright":"COPYRIGHT © 2023 GEOJE CITY COUNCIL ALL RIGHTS RESERVED","meta_copy":"COPYRIGHT © 2023 GEOJE CITY COUNCIL ALL RIGHTS RESERVED","meta_copy_en":"COPYRIGHT © 2023 GEOJE CITY COUNCIL ALL RIGHTS RESERVED","meta_copy_cn":"","meta_copy_jp":"","meta_kword":"대한민국, 거제시의회","meta_kword_en":"","meta_kword_cn":"","meta_kword_jp":"","meta_desc":"경상남도 거제시의회 홈페이지입니다.","meta_desc_en":"","meta_desc_cn":"","meta_desc_jp":"","cl_phone":"055)639-7207","cl_fax":"055-639-7259","mng_phone":"","blog":"","facebook":"","twitter":"","kakaostory":"","instagram":"","youtube":"","decMng_phone":""};
+        const reqInfo = {"url":"http://www.gjcl.go.kr/viewer/minutes.do","host":"www.gjcl.go.kr","path":"/viewer/minutes.do","path_seq":["viewer","minutes.do"],"page_group":"viewer","upper_path":"/viewer","cntx_path":"","parameters":{"schwrd":"","con_idx_sch":"","flag":"all","mem_sch":"","th_sch":"","item_sch":"","page":"1","list_style":"","cmt_cd_sch":""},"param_str":"schwrd=\u0026con_idx_sch=\u0026flag=all\u0026mem_sch=\u0026th_sch=\u0026item_sch=\u0026page=1\u0026list_style=\u0026cmt_cd_sch=","param_enc_str":"schwrd=\u0026con_idx_sch=\u0026flag=all\u0026mem_sch=\u0026th_sch=\u0026item_sch=\u0026page=1\u0026list_style=\u0026cmt_cd_sch=","main_page":false,"page_title":"거제시의회","user_agent":{"platform":"Windows 10","browser":"Chrome","version_str":"151.0.7922.34","version":151.0,"is_mobile":false,"is_robot":false}};
+		const reform = "view";
+		const userAgent = {"platform":"Windows 10","browser":"Chrome","version_str":"151.0.7922.34","version":151.0,"is_mobile":false,"is_robot":false};
+		const is_modern_browser = true;
+		
+			alert("본회의록은 회의내용의 신속한 정보제공을 위한\r임시회의록으로서 완결본이 아니므로\r열람에 참고하시기 바랍니다.");
+			document.onmousedown = disableclick;
+			const status="본회의록은 회의내용의 신속한 정보제공을 위한\r임시회의록으로서 완결본이 아니므로 복사하실 수 없습니다.";
+			function disableclick(event){
+				if (event.button==2) {
+					alert(status);
+					return false;
+				}
+			}
+		
+	</script>
+	<script src="/assets/plugins/kakao/kakao.min.js"></script>
+	<script src="/resources/js/common.js"></script>
+	<script src="/resources/js/profile.js?1786006606267"></script>
+	<script src="/resources/viewer/minutes/viewer.js?1786006606267"></script>
+	
+
+
+<script>
+    var _vsto = _vsto || {};
+    (function() {
+        var _rt =(("https:" === document.location.protocol) ? "https" : "http") + "://www.gjcl.go.kr";
+        _vsto._rt = _rt;
+        var _log = "/visitant/log.do";
+        _vsto._log = _log;
+        var d = document, g = d.createElement("script"), s = d.getElementsByTagName("script")[0]; g.type = "text/javascript";
+        g.defer = true; g.async = true; g.src = _rt + "/assets/plugins/visitantjs/visitant.min.js"; s.parentNode.insertBefore(g, s);
+    })();
+</script>
+	
+	
+
+</body></html>
