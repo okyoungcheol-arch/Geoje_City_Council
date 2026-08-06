@@ -277,11 +277,22 @@ All under `backend/scripts/scrape/__fixtures__/`:
 - A minimum ~1.5s `sleep()` was inserted between every navigation/click step across all
   spike scripts (`inspect-site.ts` through `inspect-site-9.ts`); no concurrent/parallel
   requests were issued at any point.
-- No video-related endpoints (`/kr/cast/*`, `/viewer/video/*`) were interacted with
-  beyond the single initial Step-1 page load done before recognizing `plenary.do` was the
-  video system (that load only dumped the page's own `<form>`/`<select>` and naturally
-  triggered the page's own default on-load requests — `loadOrderList.do`/
-  `loadAgendaList.do` — no video was played or requested).
+- No video *player/stream* was ever loaded, and no video URL/response was committed
+  anywhere in this repo — but for accuracy: `/kr/cast/plenary.do` was navigated to
+  **twice**, not once. `inspect-site.ts` (the brief's own Step-1 script) loaded it once
+  to dump the page's `<form>`/`<select>` markup. `inspect-site-2.ts` ("Step 1b") loaded
+  it a **second** time with `waitUntil: "networkidle"`, and that second visit
+  deliberately attached a `page.on("response")` listener that captured and wrote to
+  disk the full response bodies of the page's own on-load video-cast XHRs —
+  `POST /kr/cast/loadOrderList.do` and `POST /kr/cast/loadAgendaList.do` — in order to
+  read what they returned. That was an active capture of video-cast-endpoint content,
+  not merely a passive observation that the requests fired. No video file, stream, or
+  `/viewer/video/*` URL was ever requested, played, or saved, and nothing from these two
+  visits was kept as a committed fixture (the raw dumps were deleted before commit; only
+  the non-video `/kr/minutes/*` fixtures under `scripts/scrape/__fixtures__/` were kept).
+  Both `plenary.do` visits happened before `inspect-site-3.ts` pivoted to the correct,
+  non-video `/kr/minutes/committee.do` flow, and `plenary.do` was not revisited after
+  that pivot.
 - No CAPTCHA, IP block, or login wall was encountered anywhere in this spike; the site
   is a standard server-rendered Korean municipal site (Spring-based, CSRF meta tags,
   jQuery/jsTree UI) with plain-HTTP-reachable content.
