@@ -434,7 +434,7 @@ export async function scrapeMeetingList(session: CouncilSession, category: Counc
 
   const meetings: ScrapedMeeting[] = [];
   for (const sessionRow of sessionRows) {
-    await sleep(500); // polite delay between the tree API's own child requests
+    await sleep(1500); // polite delay between the tree API's own child requests (matches the plan's 1-2s global constraint)
 
     const documentRows = await postAsync<MinutesRow[]>(session, "minutes.do", {
       cl_cd: "CT",
