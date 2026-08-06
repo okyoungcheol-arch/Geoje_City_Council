@@ -31,3 +31,8 @@ export async function fetchInsights(filters: InsightFilters = {}): Promise<Insig
   if (!res.ok) throw new Error(`Failed to fetch insights: ${res.status}`);
   return res.json();
 }
+
+export async function fetchInsightById(id: number): Promise<InsightRow | null> {
+  const rows = await fetchInsights();
+  return rows.find((r) => r.statementId === id) ?? null;
+}
