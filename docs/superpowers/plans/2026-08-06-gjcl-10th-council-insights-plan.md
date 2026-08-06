@@ -286,72 +286,114 @@ git commit -m "docs: record gjcl.go.kr meeting-list and minutes-text findings"
 
 ## Phase 2 — Scraper (meeting list + minutes text, no video)
 
-### Task 4: Scrape the 제10대 meeting list (all categories except 5분자유발언)
+> **Rewritten after Task 3's spike.** The brief originally assumed a `/kr/cast/*` category-menu + CSS-selector scrape. Task 3 found that `/kr/cast/*` is the **video** system (out of scope) and the real, non-video minutes-text flow lives at `/kr/minutes/committee.do`, backed by a 4-level JSON tree API under `/minutes/async/*.do` (categories → 대수 → 회기 → documents), each POST requiring a CSRF token sourced from the just-loaded page. It also found that **5분자유발언 is not a separate category or document** — it's embedded as ordinary speaker turns inside regular 본회의 sitting documents, under an agenda-item header whose title contains "5분 자유발언". Tasks 4-6 below reflect this real structure; see `backend/scripts/spike/findings.md` for the full evidence trail and the fixtures under `backend/scripts/scrape/__fixtures__/`.
+
+### Task 4: Establish a council-site session and fetch the meeting list via the minutes tree API
 
 **Files:**
-- Create: `backend/scripts/scrape/categories.ts`
+- Create: `backend/scripts/scrape/session.ts`
 - Create: `backend/scripts/scrape/meetingList.ts`
 - Test: `backend/scripts/scrape/meetingList.test.ts`
 
 **Interfaces:**
-- Consumes: URL/param patterns recorded in `backend/scripts/spike/findings.md`.
-- Produces: `scrapeMeetingList(category: CouncilCategory): Promise<ScrapedMeeting[]>` where `ScrapedMeeting = { sourceMeetingId: string; category: string; title: string; sessionRound: string; sessionNo: string; meetingDate: string | null; sourceUrl: string }`. Task 6 imports this function and type.
+- Consumes: the request chain recorded in `backend/scripts/spike/findings.md` and its fixtures (`committeeRoot.CT.json`, `th.CT-A.json`, `session.CT-A-th10.json`, `minutes.CT-A-th10-session264.json`).
+- Produces: `openCouncilSession()`, `scrapeCategories(session)`, `scrapeMeetingList(session, category)` returning `ScrapedMeeting[]` where `ScrapedMeeting = { sourceMeetingId: string; category: string; title: string; sessionRound: string; sessionNo: string; meetingDate: string | null; sourceUrl: string }`. Task 6 imports all three plus the `CouncilSession`/`CouncilCategory` types.
 
-- [ ] **Step 1: Define the category list, excluding 5분자유발언**
+- [ ] **Step 1: Write the session/CSRF helper**
 
 ```typescript
-// backend/scripts/scrape/categories.ts
-export const COUNCIL_CATEGORIES = [
-  { key: "본회의", path: "/kr/cast/plenary.do" },
-  { key: "시정질문", path: "/kr/cast/question.do" },
-  { key: "의회운영위원회", path: "/kr/cast/standingC111.do" },
-  { key: "행정복지위원회", path: "/kr/cast/standingC222.do" },
-  { key: "경제관광위원회", path: "/kr/cast/standingC333.do" },
-  { key: "예산결산특별위원회", path: "/kr/cast/standingE011.do" },
-  { key: "인사청문특별위원회", path: "/kr/cast/standingG803.do" },
-  { key: "행정사무감사", path: "/kr/cast/standingJ.do" },
-] as const;
-// Deliberately excludes "/kr/cast/free.do" (5분자유발언) per project scope.
+// backend/scripts/scrape/session.ts
+import { chromium, type Browser, type Page } from "playwright";
 
-export type CouncilCategory = typeof COUNCIL_CATEGORIES[number]["key"];
+export interface CouncilSession {
+  page: Page;
+  csrfToken: string;
+}
+
+export async function openCouncilSession(): Promise<{ browser: Browser; session: CouncilSession }> {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.goto("https://www.gjcl.go.kr/kr/minutes/committee.do");
+  const csrfToken = await page.locator("meta#csrf").getAttribute("content");
+  if (!csrfToken) throw new Error("CSRF token not found on /kr/minutes/committee.do");
+  return { browser, session: { page, csrfToken } };
+}
+
+export async function postAsync<T>(
+  session: CouncilSession,
+  path: string,
+  form: Record<string, string | number>
+): Promise<T> {
+  const res = await session.page.request.post(`https://www.gjcl.go.kr/minutes/async/${path}`, {
+    form,
+    headers: {
+      "X-CSRF-TOKEN": session.csrfToken,
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+  return res.json();
+}
 ```
 
-- [ ] **Step 2: Write a failing test with a fixture**
-
-Save one real captured HTML response (from Task 3) as `backend/scripts/scrape/__fixtures__/plenary-list-10th.html`.
+- [ ] **Step 2: Write failing tests for the pure label parsers, using real captured strings**
 
 ```typescript
 // backend/scripts/scrape/meetingList.test.ts
 import { test, expect } from "vitest";
-import fs from "node:fs";
-import { parseMeetingListHtml } from "./meetingList";
+import { parseSessionRound, parseDocumentLabel } from "./meetingList";
 
-test("parses 제10대 meeting rows from the plenary list fixture", () => {
-  const html = fs.readFileSync(new URL("./__fixtures__/plenary-list-10th.html", import.meta.url), "utf-8");
-  const rows = parseMeetingListHtml(html, "본회의");
-  expect(rows.length).toBeGreaterThan(0);
-  expect(rows[0]).toMatchObject({ category: "본회의" });
-  expect(rows.every(r => r.sourceMeetingId.length > 0)).toBe(true);
+test("parses the round number from a real session label", () => {
+  // real label from scripts/scrape/__fixtures__/session.CT-A-th10.json
+  expect(parseSessionRound("제264회 [임시회] (2026. 07. 20. ~ 2026. 07. 31.)")).toBe("제264회");
+});
+
+test("parses sitting number and date from a real document label", () => {
+  // real label from scripts/scrape/__fixtures__/minutes.CT-A-th10-session264.json
+  expect(parseDocumentLabel("[임시회의록] 제1차(2026.07.20.월요일)")).toEqual({
+    sessionNo: "제1차",
+    meetingDate: "2026-07-20",
+  });
+});
+
+test("recognizes 개회식 (opening ceremony) as a valid sessionNo", () => {
+  expect(parseDocumentLabel("[임시회의록] 개회식(2026.07.20.월요일)").sessionNo).toBe("개회식");
 });
 ```
 
-- [ ] **Step 3: Run it to confirm it fails**
+- [ ] **Step 3: Run to confirm it fails**
 
-Run: `npx vitest run scripts/scrape/meetingList.test.ts`
-Expected: FAIL — `parseMeetingListHtml` is not defined.
+Run: `npx vitest run scripts/scrape/meetingList.test.ts` (from `backend/`)
+Expected: FAIL — `parseSessionRound`/`parseDocumentLabel` are not defined.
 
-- [ ] **Step 4: Implement the scraper using the real selectors from Phase 1 findings**
+- [ ] **Step 4: Implement the tree-walk using the real request chain from findings.md**
 
 ```typescript
 // backend/scripts/scrape/meetingList.ts
-import { chromium } from "playwright";
-import * as cheerio from "cheerio";
-import type { CouncilCategory } from "./categories";
-import { COUNCIL_CATEGORIES } from "./categories";
+import type { CouncilSession } from "./session";
+import { postAsync } from "./session";
+
+export interface CouncilCategory {
+  cmtCd: string;
+  label: string;
+}
+
+interface CommitteeRootRow {
+  text: string;
+  data: { cl_cd: string; cmt_cd: string };
+}
+interface SessionRow {
+  text: string;
+  data: { cl_cd: string; cmt_cd: string; th: number; session: number };
+}
+interface MinutesRow {
+  text: string;
+  a_attr: { title: string };
+  data: { uid: number; publish: string };
+}
 
 export interface ScrapedMeeting {
   sourceMeetingId: string;
-  category: CouncilCategory;
+  category: string;
   title: string;
   sessionRound: string;
   sessionNo: string;
@@ -359,42 +401,64 @@ export interface ScrapedMeeting {
   sourceUrl: string;
 }
 
-// Selector/param details below are filled in from backend/scripts/spike/findings.md
-// once Phase 1 is complete.
-export function parseMeetingListHtml(html: string, category: CouncilCategory): ScrapedMeeting[] {
-  const $ = cheerio.load(html);
-  const rows: ScrapedMeeting[] = [];
-  $(".meeting-list-row").each((_, el) => { // real selector from findings.md
-    const sourceMeetingId = $(el).attr("data-meeting-id") ?? "";
-    const title = $(el).find(".title").text().trim();
-    const sessionRound = $(el).find(".round").text().trim();
-    const sessionNo = $(el).find(".no").text().trim();
-    const meetingDate = $(el).find(".date").text().trim() || null;
-    const href = $(el).find("a").attr("href") ?? "";
-    rows.push({
-      sourceMeetingId,
-      category,
-      title,
-      sessionRound,
-      sessionNo,
-      meetingDate,
-      sourceUrl: new URL(href, "https://www.gjcl.go.kr").toString(),
-    });
-  });
-  return rows;
+async function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
-export async function scrapeMeetingList(category: CouncilCategory): Promise<ScrapedMeeting[]> {
-  const def = COUNCIL_CATEGORIES.find(c => c.key === category)!;
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto(`https://www.gjcl.go.kr${def.path}`);
-  await page.selectOption("select[name='daesu']", { label: "제10대" });
-  await page.click("button[type='submit']");
-  await page.waitForLoadState("networkidle");
-  const html = await page.content();
-  await browser.close();
-  return parseMeetingListHtml(html, category);
+// "제264회 [임시회] (2026. 07. 20. ~ 2026. 07. 31.)" -> "제264회"
+export function parseSessionRound(label: string): string {
+  const match = label.match(/^(제\d+회)/);
+  return match ? match[1] : label;
+}
+
+// "[임시회의록] 제1차(2026.07.20.월요일)" -> { sessionNo: "제1차", meetingDate: "2026-07-20" }
+export function parseDocumentLabel(label: string): { sessionNo: string; meetingDate: string | null } {
+  const noMatch = label.match(/(제\d+차|개회식)/);
+  const sessionNo = noMatch ? noMatch[1] : label;
+  const dateMatch = label.match(/(\d{4})[.\s]+(\d{2})[.\s]+(\d{2})/);
+  const meetingDate = dateMatch ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}` : null;
+  return { sessionNo, meetingDate };
+}
+
+export async function scrapeCategories(session: CouncilSession): Promise<CouncilCategory[]> {
+  const rows = await postAsync<CommitteeRootRow[]>(session, "committeeRoot.do", { cl_cd: "CT" });
+  return rows.map((r) => ({ cmtCd: r.data.cmt_cd, label: r.text }));
+}
+
+export async function scrapeMeetingList(session: CouncilSession, category: CouncilCategory): Promise<ScrapedMeeting[]> {
+  const sessionRows = await postAsync<SessionRow[]>(session, "session.do", {
+    cl_cd: "CT",
+    th: 10,
+    cmt_cd: category.cmtCd,
+  });
+
+  const meetings: ScrapedMeeting[] = [];
+  for (const sessionRow of sessionRows) {
+    await sleep(500); // polite delay between the tree API's own child requests
+
+    const documentRows = await postAsync<MinutesRow[]>(session, "minutes.do", {
+      cl_cd: "CT",
+      th: 10,
+      session: sessionRow.data.session,
+      cmt_cd: category.cmtCd,
+    });
+
+    for (const doc of documentRows) {
+      if (doc.data.publish !== "T") continue; // skip unpublished/provisional-only placeholders
+
+      const { sessionNo, meetingDate } = parseDocumentLabel(doc.text);
+      meetings.push({
+        sourceMeetingId: String(doc.data.uid),
+        category: category.label,
+        title: doc.a_attr.title,
+        sessionRound: parseSessionRound(sessionRow.text),
+        sessionNo,
+        meetingDate,
+        sourceUrl: `https://www.gjcl.go.kr/viewer/minutes.do?uid=${doc.data.uid}`,
+      });
+    }
+  }
+  return meetings;
 }
 ```
 
@@ -406,23 +470,21 @@ Expected: PASS
 - [ ] **Step 6: Commit**
 
 ```bash
-git add scripts/scrape/categories.ts scripts/scrape/meetingList.ts scripts/scrape/meetingList.test.ts scripts/scrape/__fixtures__
-git commit -m "feat: scrape 제10대 meeting list for all non-5분자유발언 categories"
+git add scripts/scrape/session.ts scripts/scrape/meetingList.ts scripts/scrape/meetingList.test.ts
+git commit -m "feat: fetch 제10대 meeting list via the real minutes tree API"
 ```
 
-### Task 5: Scrape per-speaker statement text from meeting minutes
+### Task 5: Scrape per-speaker statement text from meeting minutes, excluding 5분자유발언 turns
 
 **Files:**
 - Create: `backend/scripts/scrape/minutes.ts`
 - Test: `backend/scripts/scrape/minutes.test.ts`
 
 **Interfaces:**
-- Consumes: `ScrapedMeeting.sourceUrl` (Task 4).
-- Produces: `scrapeMinutes(meetingUrl: string): Promise<ScrapedStatement[]>` where `ScrapedStatement = { memberName: string; agendaTitle: string | null; orderInMeeting: number; rawText: string }`. Task 6 imports this.
+- Consumes: `ScrapedMeeting.sourceUrl` (Task 4); the real fixture `backend/scripts/scrape/__fixtures__/viewer-minutes-uid5236.html` captured in Task 3.
+- Produces: `scrapeMinutes(meetingUrl: string): Promise<ScrapedStatement[]>` where `ScrapedStatement = { memberName: string; agendaTitle: string | null; orderInMeeting: number; rawText: string }`. Task 6 imports this. **5분자유발언 turns are filtered out inside this function — Task 6 never sees them.**
 
-- [ ] **Step 1: Save a fixture and write a failing test**
-
-Save one real minutes page as `backend/scripts/scrape/__fixtures__/minutes-sample.html` (captured in Phase 1).
+- [ ] **Step 1: Write failing tests against the real fixture**
 
 ```typescript
 // backend/scripts/scrape/minutes.test.ts
@@ -430,12 +492,27 @@ import { test, expect } from "vitest";
 import fs from "node:fs";
 import { parseMinutesHtml } from "./minutes";
 
-test("splits minutes HTML into per-speaker statements", () => {
-  const html = fs.readFileSync(new URL("./__fixtures__/minutes-sample.html", import.meta.url), "utf-8");
-  const statements = parseMinutesHtml(html);
-  expect(statements.length).toBeGreaterThan(0);
-  expect(statements[0].memberName).not.toBe("");
-  expect(statements[0].rawText.length).toBeGreaterThan(0);
+function loadFixture() {
+  return fs.readFileSync(new URL("./__fixtures__/viewer-minutes-uid5236.html", import.meta.url), "utf-8");
+}
+
+test("parses a regular speaker turn with role and name", () => {
+  const statements = parseMinutesHtml(loadFixture());
+  const opening = statements.find((s) => s.rawText.includes("성원이 되었으므로"));
+  expect(opening).toBeDefined();
+  expect(opening!.memberName).toContain("안석봉");
+});
+
+test("handles a non-member speaker with no profile link", () => {
+  const statements = parseMinutesHtml(loadFixture());
+  const staff = statements.find((s) => s.memberName.includes("윤병삼"));
+  expect(staff).toBeDefined();
+});
+
+test("excludes 5분자유발언 turns from the returned statements", () => {
+  // this specific text is the real 5분자유발언 turn captured in findings.md — it must never appear
+  const statements = parseMinutesHtml(loadFixture());
+  expect(statements.some((s) => s.rawText.includes("공공시설 용지 환매권 관리 강화"))).toBe(false);
 });
 ```
 
@@ -444,7 +521,7 @@ test("splits minutes HTML into per-speaker statements", () => {
 Run: `npx vitest run scripts/scrape/minutes.test.ts`
 Expected: FAIL — `parseMinutesHtml` is not defined.
 
-- [ ] **Step 3: Implement using the real speaker-marker pattern from findings.md**
+- [ ] **Step 3: Implement using the real `.contents-block`/`.speaker-block`/`.item-in-contents` structure from findings.md**
 
 ```typescript
 // backend/scripts/scrape/minutes.ts
@@ -458,26 +535,54 @@ export interface ScrapedStatement {
   rawText: string;
 }
 
+function isFreeSpeechAgenda(title: string | null): boolean {
+  if (!title) return false;
+  return /5\s*분\s*자유\s*발언/.test(title);
+}
+
 export function parseMinutesHtml(html: string): ScrapedStatement[] {
   const $ = cheerio.load(html);
   const statements: ScrapedStatement[] = [];
   let order = 0;
   let currentAgenda: string | null = null;
 
-  $(".minutes-body > *").each((_, el) => {
+  $("#minutes > .contents-block").each((_, el) => {
     const $el = $(el);
-    if ($el.hasClass("agenda-heading")) {
-      currentAgenda = $el.text().trim();
-      return;
+
+    const $itemHeader = $el.find(".item-in-contents").first();
+    if ($itemHeader.length > 0) {
+      currentAgenda = $itemHeader.attr("title")?.trim() || $itemHeader.text().trim();
+      return; // agenda-item header, not a statement
     }
-    const speakerMatch = $el.find(".speaker-name").text().trim();
-    if (!speakerMatch) return;
-    statements.push({
-      memberName: speakerMatch.replace(/의원$/, "").trim(),
-      agendaTitle: currentAgenda,
-      orderInMeeting: order++,
-      rawText: $el.find(".speech-text").text().trim(),
-    });
+
+    if ($el.find(".taged-line").length > 0) {
+      return; // procedural line (timestamps, recess), not a statement
+    }
+
+    if (!$el.hasClass("speaker-block")) {
+      return; // not a recognized turn type
+    }
+
+    if (isFreeSpeechAgenda(currentAgenda)) {
+      return; // 5분자유발언 — excluded from this project's scope
+    }
+
+    const $strong = $el.children("strong").first();
+    const linkText = $strong.find("a").text().trim();
+    const memberName = linkText || $strong.text().replace(/^○/, "").trim();
+
+    const rawText = $el
+      .clone()
+      .children("strong")
+      .remove()
+      .end()
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!memberName || !rawText) return;
+
+    statements.push({ memberName, agendaTitle: currentAgenda, orderInMeeting: order++, rawText });
   });
 
   return statements;
@@ -502,8 +607,8 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add scripts/scrape/minutes.ts scripts/scrape/minutes.test.ts scripts/scrape/__fixtures__
-git commit -m "feat: parse per-speaker statements from meeting minutes"
+git add scripts/scrape/minutes.ts scripts/scrape/minutes.test.ts
+git commit -m "feat: parse per-speaker minutes text, excluding 5분자유발언 turns"
 ```
 
 ### Task 6: Orchestrate the full scrape and upsert into Postgres
@@ -512,7 +617,7 @@ git commit -m "feat: parse per-speaker statements from meeting minutes"
 - Create: `backend/scripts/scrape/run.ts`
 
 **Interfaces:**
-- Consumes: `scrapeMeetingList` (4), `scrapeMinutes` (5), `db`/`meetings`/`members`/`agendaItems`/`statements` (Task 2).
+- Consumes: `openCouncilSession`, `scrapeCategories`, `scrapeMeetingList` (Task 4), `scrapeMinutes` (Task 5), `db`/`meetings`/`members`/`agendaItems`/`statements` (Task 2).
 - Produces: populated `meetings`, `members`, `agendaItems`, `statements` tables — Phase 3 reads these.
 
 - [ ] **Step 1: Write the orchestration script**
@@ -521,9 +626,8 @@ git commit -m "feat: parse per-speaker statements from meeting minutes"
 // backend/scripts/scrape/run.ts
 import { db } from "@/db/client";
 import { meetings, members, agendaItems, statements } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { COUNCIL_CATEGORIES } from "./categories";
-import { scrapeMeetingList } from "./meetingList";
+import { openCouncilSession } from "./session";
+import { scrapeCategories, scrapeMeetingList } from "./meetingList";
 import { scrapeMinutes } from "./minutes";
 
 async function sleep(ms: number) {
@@ -531,8 +635,13 @@ async function sleep(ms: number) {
 }
 
 async function run() {
-  for (const { key: category } of COUNCIL_CATEGORIES) {
-    const meetingRows = await scrapeMeetingList(category);
+  const { browser, session } = await openCouncilSession();
+  const categories = await scrapeCategories(session);
+
+  for (const category of categories) {
+    await sleep(1500);
+    const meetingRows = await scrapeMeetingList(session, category);
+
     for (const m of meetingRows) {
       await sleep(1500); // be polite to the source site
 
@@ -582,9 +691,11 @@ async function run() {
           .onConflictDoNothing();
       }
 
-      console.log(`Scraped: ${m.title} (${scrapedStatements.length} statements)`);
+      console.log(`Scraped: ${m.title} (${scrapedStatements.length} statements, category=${category.label})`);
     }
   }
+
+  await browser.close();
 }
 
 run().then(() => process.exit(0));
@@ -592,18 +703,18 @@ run().then(() => process.exit(0));
 
 - [ ] **Step 2: Run against a single category first to validate end-to-end**
 
-Temporarily filter `COUNCIL_CATEGORIES` to `["본회의"]` and run: `npx tsx scripts/scrape/run.ts` (from `backend/`).
-Expected: rows appear in `meetings`, `members`, `agendaItems`, `statements` — spot-check with `npx drizzle-kit studio`.
+Temporarily filter the `categories` array (after fetching) down to just the one whose `label === "본회의"`, and run: `npx tsx scripts/scrape/run.ts` (from `backend/`).
+Expected: rows appear in `meetings`, `members`, `agendaItems`, `statements` — spot-check with `npx drizzle-kit studio`. Confirm no `agendaItems.title` contains "5분자유발언"/"5분 자유발언" (Task 5's filter should have already excluded those turns entirely).
 
 - [ ] **Step 3: Run the full scrape across all categories**
 
-Restore the full category list and run: `npx tsx scripts/scrape/run.ts`
+Remove the temporary filter and run: `npx tsx scripts/scrape/run.ts`
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add scripts/scrape/run.ts
-git commit -m "feat: orchestrate full 제10대 scrape into Postgres (no video)"
+git commit -m "feat: orchestrate full 제10대 scrape into Postgres via the real minutes API"
 ```
 
 ---
