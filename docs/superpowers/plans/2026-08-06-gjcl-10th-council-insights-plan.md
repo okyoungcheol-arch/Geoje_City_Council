@@ -15,6 +15,7 @@
 - Target scope: 대수 = 제10대 only. Include all meeting categories reachable from the 영상회의록 menu (본회의 `plenary.do`, 시정질문 `question.do`, 상임위원회 4종 `standingC111/C222/C333`, 예산결산특별위원회 `standingE011`, 인사청문특별위원회 `standingG803`, 행정사무감사 `standingJ.do`) **except** 5분자유발언 (`free.do`), which must never be scraped or processed.
 - Two-model split is fixed: summarization + tag generation → `claude-sonnet-5`; the 5 insight scores (학습수준, 질의평점, 아이디어점수, 실행가능성, 거제영향도) → `claude-opus-5`. Never swap these.
 - All Anthropic model calls go through the **Vercel AI Gateway** using the AI SDK — no direct `@ai-sdk/anthropic` package, no raw `ANTHROPIC_API_KEY`. Model strings are plain `"anthropic/claude-sonnet-5"` / `"anthropic/claude-opus-5"`.
+- Gateway auth is **OIDC by default**: `vercel link` + `vercel env pull` provisions a `VERCEL_OIDC_TOKEN` automatically, which the `ai` package picks up with zero extra config. Do not manually generate an `AI_GATEWAY_API_KEY` unless OIDC is unavailable (e.g. running the pipeline off Vercel infra) — only fall back to a static gateway key in that case.
 - Rating scale for all 5 insight axes: integer 1–5.
 - This is a one-shot historical batch (no cron/scheduling in this plan). The pipeline must be safely re-runnable (idempotent upserts keyed on natural IDs from the source site) so it can be extended to periodic runs later without a rewrite.
 - Respect the source site: sequential requests with a 1–2s delay between page loads, no parallel hammering, honor robots.txt.
@@ -53,23 +54,46 @@ cd gjcl-council-insights
 - [ ] **Step 2: Install dependencies**
 
 ```bash
-npm install drizzle-orm postgres ai @ai-sdk/gateway playwright zod
-npm install -D drizzle-kit @types/pg tsx
+npm install drizzle-orm @neondatabase/serverless ai playwright zod
+npm install -D drizzle-kit tsx
 ```
 
-- [ ] **Step 3: Provision Postgres via Vercel Marketplace**
+- [ ] **Step 3: Link the Vercel project and provision Postgres via Marketplace**
 
-Run `vercel link` then `vercel integration add neon` (or the Marketplace equivalent surfaced by `vercel` CLI). Confirm `POSTGRES_URL` appears via `vercel env pull .env.local`.
+```bash
+vercel link --yes
+vercel integration add neon --yes --no-claim
+vercel env pull .env.local --yes
+```
 
-- [ ] **Step 4: Enable Vercel AI Gateway**
+If `vercel integration add neon` requires a dashboard/browser step to finish (connectable, not native), it will print a URL — stop and ask the human partner to complete it there, then re-run `vercel env pull .env.local --yes`. Confirm `DATABASE_URL` is present in `.env.local` before continuing.
 
-In the Vercel dashboard, enable AI Gateway for the project and generate a gateway key. Add `AI_GATEWAY_API_KEY` to the project's environment variables, then `vercel env pull .env.local` again so it's available locally.
+- [ ] **Step 4: Confirm AI Gateway auth (OIDC, no manual key)**
 
-- [ ] **Step 5: Write `.env.example`**
+`vercel env pull` also provisions `VERCEL_OIDC_TOKEN` in `.env.local` — this is what the `ai` package uses to authenticate through the AI Gateway automatically, with no `AI_GATEWAY_API_KEY` to generate. If AI Gateway is not yet enabled for the project, enable it once at `https://vercel.com/{team}/{project}/settings` → AI Gateway, then re-run `vercel env pull .env.local --yes`. Confirm `VERCEL_OIDC_TOKEN` is present in `.env.local`.
+
+- [ ] **Step 5: Write `drizzle.config.ts` and `.env.example`**
+
+```typescript
+// drizzle.config.ts
+import { defineConfig } from "drizzle-kit";
+
+export default defineConfig({
+  schema: "./db/schema.ts",
+  out: "./drizzle",
+  dialect: "postgresql",
+  dbCredentials: {
+    url: process.env.DATABASE_URL!,
+  },
+});
+```
 
 ```
-POSTGRES_URL=
-AI_GATEWAY_API_KEY=
+# .env.example
+DATABASE_URL=
+VERCEL_OIDC_TOKEN=
+# Only needed as a fallback if OIDC is unavailable (e.g. running the pipeline off Vercel infra):
+# AI_GATEWAY_API_KEY=
 ```
 
 - [ ] **Step 6: Verify the dev server boots**
@@ -162,12 +186,12 @@ export const statementInsights = pgTable("statement_insights", {
 
 ```typescript
 // db/client.ts
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
 import * as schema from "./schema";
 
-const client = postgres(process.env.POSTGRES_URL!);
-export const db = drizzle(client, { schema });
+const sql = neon(process.env.DATABASE_URL!);
+export const db = drizzle(sql, { schema });
 ```
 
 - [ ] **Step 2: Generate and review the SQL migration**
@@ -1254,7 +1278,7 @@ Run the dev server, load the dashboard, and manually verify: table renders all c
 vercel --prod
 ```
 
-Confirm the production URL loads the same data (i.e., `POSTGRES_URL` and `AI_GATEWAY_API_KEY` are correctly set in the Vercel project's production environment).
+Confirm the production URL loads the same data (i.e., `DATABASE_URL` is set in the Vercel project's production environment — `VERCEL_OIDC_TOKEN` is auto-managed on Vercel deployments, no manual step needed).
 
 - [ ] **Step 5: Commit final state**
 

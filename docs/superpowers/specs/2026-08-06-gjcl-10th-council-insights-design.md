@@ -32,7 +32,7 @@
 - **AI 파이프라인 (모델 이원화, 고정 규칙):**
   - Stage 1 — **Sonnet 5** (`anthropic/claude-sonnet-5`): 발언 원문 → 요약 + 자유 형식 태그(2~4개). 대량·저비용 처리.
   - Stage 2 — **Opus 5** (`anthropic/claude-opus-5`): 발언 원문 + Stage1 요약 → 5개 항목 각 1~5점 채점 + 근거. 고품질 판단이 필요한 부분만 Opus 사용.
-  - 두 모델 모두 **Vercel AI Gateway**를 통해 호출 (직접 Anthropic API 키 불필요, Vercel 프로젝트에 게이트웨이 키만 발급).
+  - 두 모델 모두 **Vercel AI Gateway**를 통해 호출 (직접 Anthropic API 키 불필요). 인증은 기본적으로 **OIDC**: `vercel link` + `vercel env pull`만으로 `VERCEL_OIDC_TOKEN`이 자동 발급되어 별도의 게이트웨이 키를 수동으로 만들 필요가 없음(Vercel 인프라 밖에서 돌릴 때만 `AI_GATEWAY_API_KEY` 수동 발급으로 대체).
 - **대시보드:** Next.js App Router, Vercel 배포. 표 형태 UI + 필터(의원별/회의별/점수범위) + 태그 클릭 시 영상 이동.
 
 ## Data Model
