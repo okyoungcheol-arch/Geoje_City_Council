@@ -1081,16 +1081,97 @@ export async function fetchInsights(filters: InsightFilters = {}): Promise<Insig
 }
 ```
 
-- [ ] **Step 4: Verify the app boots**
+- [ ] **Step 4: Add the design system tokens**
+
+Source values: `docs/design-tokens/wanted-design-system.md` (Wanted Design System, adopted as this app's visual language).
+
+```typescript
+// mobile/theme/tokens.ts
+export const colors = {
+  primary: { normal: "#0066FF", strong: "#005EEB", heavy: "#0054D1" },
+  label: {
+    normal: "#171719",
+    strong: "#000000",
+    neutral: "rgba(46,47,51,0.88)",
+    alternative: "rgba(55,56,60,0.61)",
+    assistive: "rgba(55,56,60,0.28)",
+    disable: "rgba(55,56,60,0.16)",
+  },
+  background: { normal: "#FFFFFF", alternative: "#F7F7F8" },
+  line: { normal: "rgba(112,115,124,0.22)", solid: "#EAEBEC" },
+  fill: { normal: "rgba(112,115,124,0.08)", strong: "rgba(112,115,124,0.16)", alternative: "rgba(112,115,124,0.05)" },
+  status: { positive: "#00BF40", cautionary: "#FF9200", negative: "#FF4242", info: "#0066FF" },
+} as const;
+
+export const fonts = {
+  sans: "Pretendard JP", // body/UI text
+  display: "Wanted Sans Variable", // brand/headline text
+  mono: "SF Mono",
+} as const;
+
+export const fontWeights = {
+  regular: "400",
+  medium: "500",
+  semibold: "600",
+  bold: "700",
+} as const;
+
+// Tracking is specified as a range in the source (display/title: -0.023~-0.029em,
+// body/label: +0.006~+0.031em). These are representative midpoints per group —
+// see docs/design-tokens/wanted-design-system.md if a size needs a more exact value.
+const TITLE_TRACKING_EM = -0.025;
+const BODY_TRACKING_EM = 0.015;
+
+function typeStyle(fontSize: number, lineHeightRatio: number, trackingEm: number, fontFamily: string, fontWeight: string) {
+  return {
+    fontFamily,
+    fontWeight,
+    fontSize,
+    lineHeight: Math.round(fontSize * lineHeightRatio),
+    letterSpacing: Number((fontSize * trackingEm).toFixed(2)),
+  };
+}
+
+export const typography = {
+  display1: typeStyle(56, 1.30, TITLE_TRACKING_EM, fonts.display, fontWeights.bold),
+  display2: typeStyle(40, 1.30, TITLE_TRACKING_EM, fonts.display, fontWeights.bold),
+  display3: typeStyle(36, 1.334, TITLE_TRACKING_EM, fonts.display, fontWeights.bold),
+  title1: typeStyle(32, 1.375, TITLE_TRACKING_EM, fonts.display, fontWeights.bold),
+  title2: typeStyle(28, 1.358, TITLE_TRACKING_EM, fonts.display, fontWeights.semibold),
+  title3: typeStyle(24, 1.334, TITLE_TRACKING_EM, fonts.display, fontWeights.semibold),
+  heading1: typeStyle(22, 1.364, BODY_TRACKING_EM, fonts.sans, fontWeights.semibold),
+  heading2: typeStyle(20, 1.40, BODY_TRACKING_EM, fonts.sans, fontWeights.semibold),
+  headline1: typeStyle(18, 1.445, BODY_TRACKING_EM, fonts.sans, fontWeights.semibold),
+  headline2: typeStyle(17, 1.412, BODY_TRACKING_EM, fonts.sans, fontWeights.semibold),
+  body1: typeStyle(16, 1.50, BODY_TRACKING_EM, fonts.sans, fontWeights.medium),
+  body2: typeStyle(15, 1.467, BODY_TRACKING_EM, fonts.sans, fontWeights.medium),
+  label1: typeStyle(14, 1.429, BODY_TRACKING_EM, fonts.sans, fontWeights.semibold),
+  label2: typeStyle(13, 1.385, BODY_TRACKING_EM, fonts.sans, fontWeights.semibold),
+  caption1: typeStyle(12, 1.334, BODY_TRACKING_EM, fonts.sans, fontWeights.medium),
+  caption2: typeStyle(11, 1.273, BODY_TRACKING_EM, fonts.sans, fontWeights.medium),
+} as const;
+
+export const spacing = {
+  2: 2, 4: 4, 6: 6, 8: 8, 10: 10, 12: 12, 16: 16, 20: 20, 24: 24, 28: 28, 32: 32, 40: 40, 48: 48, 64: 64,
+} as const;
+
+export const radius = {
+  4: 4, 6: 6, 8: 8, 10: 10, 12: 12, 16: 16, 20: 20, 24: 24, full: 9999,
+} as const;
+```
+
+**Font files:** Pretendard JP and Wanted Sans are open-source (`github.com/orioncactus/pretendard`, `github.com/wanteddev/wanted-sans`) but their binaries are not in this repo yet. Until they're added and loaded via `expo-font` in `mobile/app/_layout.tsx`, `fontFamily` values above fall back to the OS default font — this is an acceptable v1 gap, not a blocker. If the human partner supplies the font files, add them under `mobile/assets/fonts/` and load with `useFonts` from `expo-font` before rendering.
+
+- [ ] **Step 5: Verify the app boots**
 
 Run: `npx expo start` (from `mobile/`, with `backend/` running separately on port 3000) and confirm the default Expo Router screen loads in Expo Go or a simulator.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git init
 git add -A
-git commit -m "chore: scaffold Expo mobile app with typed API client"
+git commit -m "chore: scaffold Expo mobile app with typed API client and design tokens"
 ```
 
 ### Task 12: Insights list screen
@@ -1101,7 +1182,7 @@ git commit -m "chore: scaffold Expo mobile app with typed API client"
 - Create: `mobile/components/TagChip.tsx`
 
 **Interfaces:**
-- Consumes: `fetchInsights` (Task 11).
+- Consumes: `fetchInsights` (Task 11), `colors`/`typography`/`spacing`/`radius` (Task 11's `mobile/theme/tokens.ts`).
 - Produces: navigation to `mobile/app/statement/[id].tsx` (Task 13) when a tag or card is tapped, passing the tapped row's `statementId`.
 
 - [ ] **Step 1: Build the tappable tag chip**
@@ -1110,6 +1191,7 @@ git commit -m "chore: scaffold Expo mobile app with typed API client"
 // mobile/components/TagChip.tsx
 import { Pressable, Text, StyleSheet } from "react-native";
 import { router } from "expo-router";
+import { colors, typography, spacing, radius } from "@/theme/tokens";
 
 export function TagChip({ tag, statementId }: { tag: string; statementId: number }) {
   return (
@@ -1123,8 +1205,15 @@ export function TagChip({ tag, statementId }: { tag: string; statementId: number
 }
 
 const styles = StyleSheet.create({
-  chip: { backgroundColor: "#dbeafe", borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4, marginRight: 6, marginBottom: 6 },
-  label: { color: "#1e40af", fontSize: 13 },
+  chip: {
+    backgroundColor: colors.fill.normal,
+    borderRadius: radius[16],
+    paddingHorizontal: spacing[10],
+    paddingVertical: spacing[4],
+    marginRight: spacing[6],
+    marginBottom: spacing[6],
+  },
+  label: { ...typography.caption1, color: colors.primary.normal },
 });
 ```
 
@@ -1135,6 +1224,7 @@ const styles = StyleSheet.create({
 import { View, Text, StyleSheet } from "react-native";
 import type { InsightRow } from "@/lib/api";
 import { TagChip } from "./TagChip";
+import { colors, typography, spacing, radius } from "@/theme/tokens";
 
 export function InsightCard({ row }: { row: InsightRow }) {
   return (
@@ -1158,12 +1248,19 @@ export function InsightCard({ row }: { row: InsightRow }) {
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 12, borderRadius: 8, backgroundColor: "#fff", marginBottom: 10, borderWidth: 1, borderColor: "#e5e7eb" },
-  meeting: { fontSize: 12, color: "#6b7280" },
-  member: { fontSize: 16, fontWeight: "600", marginVertical: 2 },
-  tagRow: { flexDirection: "row", flexWrap: "wrap", marginVertical: 4 },
-  scoreRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  score: { fontSize: 12, color: "#374151" },
+  card: {
+    padding: spacing[12],
+    borderRadius: radius[8],
+    backgroundColor: colors.background.normal,
+    marginBottom: spacing[10],
+    borderWidth: 1,
+    borderColor: colors.line.solid,
+  },
+  meeting: { ...typography.caption2, color: colors.label.alternative },
+  member: { ...typography.headline2, color: colors.label.normal, marginVertical: spacing[2] },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", marginVertical: spacing[4] },
+  scoreRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing[8] },
+  score: { ...typography.caption1, color: colors.label.neutral },
 });
 ```
 
@@ -1246,6 +1343,7 @@ import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView, Text, View, ActivityIndicator, StyleSheet } from "react-native";
 import { fetchInsightById, type InsightRow } from "@/lib/api";
+import { colors, typography, spacing } from "@/theme/tokens";
 
 export default function StatementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -1266,7 +1364,7 @@ export default function StatementDetailScreen() {
   if (row === null) {
     return (
       <View style={styles.center}>
-        <Text>발언을 찾을 수 없습니다.</Text>
+        <Text style={styles.body}>발언을 찾을 수 없습니다.</Text>
       </View>
     );
   }
@@ -1286,12 +1384,12 @@ export default function StatementDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  meeting: { fontSize: 12, color: "#6b7280" },
-  member: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
-  sectionTitle: { fontSize: 14, fontWeight: "600", marginTop: 12, marginBottom: 4 },
-  body: { fontSize: 14, lineHeight: 20, color: "#1f2937" },
+  container: { padding: spacing[16], backgroundColor: colors.background.normal },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background.normal },
+  meeting: { ...typography.caption2, color: colors.label.alternative },
+  member: { ...typography.title3, color: colors.label.normal, marginBottom: spacing[12] },
+  sectionTitle: { ...typography.label1, color: colors.label.normal, marginTop: spacing[12], marginBottom: spacing[4] },
+  body: { ...typography.body2, color: colors.label.neutral },
 });
 ```
 
@@ -1321,6 +1419,7 @@ git commit -m "feat: add statement detail screen showing minutes text (replaces 
 ```tsx
 // mobile/components/InsightFilters.tsx
 import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+import { colors, typography, spacing, radius } from "@/theme/tokens";
 
 interface Props {
   members: string[];
@@ -1347,28 +1446,28 @@ export function InsightFilters({
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
         <Pressable onPress={() => onMemberChange("")} style={[styles.pill, !memberFilter && styles.pillActive]}>
-          <Text>전체 의원</Text>
+          <Text style={[styles.pillLabel, !memberFilter && styles.pillLabelActive]}>전체 의원</Text>
         </Pressable>
         {members.map((m) => (
           <Pressable key={m} onPress={() => onMemberChange(m)} style={[styles.pill, memberFilter === m && styles.pillActive]}>
-            <Text>{m}</Text>
+            <Text style={[styles.pillLabel, memberFilter === m && styles.pillLabelActive]}>{m}</Text>
           </Pressable>
         ))}
       </ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
         <Pressable onPress={() => onMeetingChange("")} style={[styles.pill, !meetingFilter && styles.pillActive]}>
-          <Text>전체 회의</Text>
+          <Text style={[styles.pillLabel, !meetingFilter && styles.pillLabelActive]}>전체 회의</Text>
         </Pressable>
         {meetings.map((m) => (
           <Pressable key={m} onPress={() => onMeetingChange(m)} style={[styles.pill, meetingFilter === m && styles.pillActive]}>
-            <Text>{m}</Text>
+            <Text style={[styles.pillLabel, meetingFilter === m && styles.pillLabelActive]}>{m}</Text>
           </Pressable>
         ))}
       </ScrollView>
       <View style={styles.row}>
         {[1, 2, 3, 4, 5].map((n) => (
           <Pressable key={n} onPress={() => onMinGeojeImpactChange(n)} style={[styles.pill, minGeojeImpact === n && styles.pillActive]}>
-            <Text>거제영향도 ≥ {n}</Text>
+            <Text style={[styles.pillLabel, minGeojeImpact === n && styles.pillLabelActive]}>거제영향도 ≥ {n}</Text>
           </Pressable>
         ))}
       </View>
@@ -1377,10 +1476,18 @@ export function InsightFilters({
 }
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 12, paddingTop: 8 },
-  row: { flexDirection: "row", marginBottom: 8 },
-  pill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: "#f3f4f6", marginRight: 6 },
-  pillActive: { backgroundColor: "#bfdbfe" },
+  container: { paddingHorizontal: spacing[12], paddingTop: spacing[8] },
+  row: { flexDirection: "row", marginBottom: spacing[8] },
+  pill: {
+    paddingHorizontal: spacing[10],
+    paddingVertical: spacing[6],
+    borderRadius: radius.full,
+    backgroundColor: colors.fill.normal,
+    marginRight: spacing[6],
+  },
+  pillActive: { backgroundColor: colors.primary.normal },
+  pillLabel: { ...typography.label2, color: colors.label.normal },
+  pillLabelActive: { color: colors.background.normal },
 });
 ```
 
@@ -1393,6 +1500,7 @@ import { FlatList, ActivityIndicator, StyleSheet, View } from "react-native";
 import { fetchInsights, type InsightRow } from "@/lib/api";
 import { InsightCard } from "@/components/InsightCard";
 import { InsightFilters } from "@/components/InsightFilters";
+import { colors, spacing } from "@/theme/tokens";
 
 export default function IndexScreen() {
   const [rows, setRows] = useState<InsightRow[] | null>(null);
@@ -1445,8 +1553,8 @@ export default function IndexScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { padding: 12 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  list: { padding: spacing[12], backgroundColor: colors.background.alternative, flexGrow: 1 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background.alternative },
 });
 ```
 

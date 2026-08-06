@@ -32,6 +32,10 @@ mobile/  React Native + Expo 앱
 
 `backend/`와 `mobile/`은 완전히 분리된 두 프로젝트다. 모바일 앱은 DB에 직접 접근하지 않고 오직 `/api/insights`만 호출한다.
 
+## 비주얼 디자인
+
+모바일 앱의 색상·타이포그래피·spacing·radius는 처음부터 새로 만들지 않고 **Wanted Design System**(claude.ai에서 Figma 파일로부터 재구성된 디자인 시스템)의 토큰을 채택한다. 원본 값은 [docs/design-tokens/wanted-design-system.md](docs/design-tokens/wanted-design-system.md)에 기록되어 있고, 실제 코드는 `mobile/theme/tokens.ts`(Task 11)에서 만들어진다. Wanted는 채용 플랫폼이라 우리 도메인과 무관하지만, 검증된 토큰 체계를 그대로 재사용해 처음부터 일관된 UI를 갖추는 것이 목적이다.
+
 ## 출력 형식 (요청 원문 반영)
 
 | 컬럼 | 설명 |

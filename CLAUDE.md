@@ -11,8 +11,14 @@
 - [Design.md](Design.md) — 제품 설계 개요 (무엇을, 왜)
 - [agent.md](agent.md) — Sonnet 5 / Opus 5 두 AI 에이전트의 역할, 입출력 계약, 프롬프트/루브릭
 - [harness.md](harness.md) — 스크래퍼 + AI 파이프라인 실행 방법, 환경변수, 재시도/멱등성 규칙
+- [docs/design-tokens/wanted-design-system.md](docs/design-tokens/wanted-design-system.md) — 모바일 앱이 채택한 디자인 시스템의 원본 토큰 값 (색상/타이포/spacing/radius)
 - [docs/superpowers/specs/](docs/superpowers/specs/) — 상세 설계 스펙 (superpowers brainstorming 산출물)
 - [docs/superpowers/plans/](docs/superpowers/plans/) — 태스크 단위 구현 계획 (superpowers writing-plans 산출물)
+
+## 모바일 UI 스타일 규칙
+
+- 모든 색상·폰트 크기·spacing·radius는 `mobile/theme/tokens.ts`의 값(`colors`, `typography`, `spacing`, `radius`)을 통해서만 사용한다. 컴포넌트에 `#0066FF` 같은 하드코딩된 값을 직접 넣지 않는다.
+- 새 색상/사이즈가 필요하면 먼저 `docs/design-tokens/wanted-design-system.md`에 해당 값이 있는지 확인하고, 없으면 사람과 상의 후 토큰을 추가한다 — 임의로 새 hex 값을 만들지 않는다.
 
 ## 저장소 구조
 
