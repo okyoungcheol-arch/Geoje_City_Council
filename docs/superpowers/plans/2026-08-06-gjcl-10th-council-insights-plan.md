@@ -57,7 +57,7 @@ cd backend
 
 ```bash
 npm install drizzle-orm @neondatabase/serverless ai playwright zod
-npm install -D drizzle-kit tsx
+npm install -D drizzle-kit tsx vitest
 ```
 
 - [ ] **Step 3: Link the Vercel project and provision Postgres via Marketplace**
