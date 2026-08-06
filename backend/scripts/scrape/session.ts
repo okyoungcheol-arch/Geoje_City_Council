@@ -25,6 +25,10 @@ export async function postAsync<T>(
     headers: {
       "X-CSRF-TOKEN": session.csrfToken,
       "X-Requested-With": "XMLHttpRequest",
+      // The live server 500s on these endpoints without a same-origin Referer (confirmed
+      // during Task 6 live validation on 2026-08-06) — browsers send this automatically,
+      // but Playwright's page.request.post does not, so it must be set explicitly here.
+      "Referer": "https://www.gjcl.go.kr/kr/minutes/committee.do",
     },
   });
   return res.json();
