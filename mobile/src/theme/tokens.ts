@@ -34,7 +34,7 @@ export const fontWeights = {
 const TITLE_TRACKING_EM = -0.025;
 const BODY_TRACKING_EM = 0.015;
 
-function typeStyle(fontSize: number, lineHeightRatio: number, trackingEm: number, fontFamily: string, fontWeight: string) {
+function typeStyle(fontSize: number, lineHeightRatio: number, trackingEm: number, fontFamily: string, fontWeight: (typeof fontWeights)[keyof typeof fontWeights]) {
   return {
     fontFamily,
     fontWeight,
