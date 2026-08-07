@@ -1,6 +1,6 @@
 import { db } from "@/db/client";
 import { statements, statementInsights, members, meetings, agendaItems } from "@/db/schema";
-import { and, eq, isNull, notInArray } from "drizzle-orm";
+import { and, count, eq, isNull } from "drizzle-orm";
 import { summarizeStatement } from "@/lib/ai/summarize";
 import { scoreStatement, type PriorStatementContext } from "@/lib/ai/score";
 import { computeWeightedScore, type AxisScores } from "@/lib/scoring/weightedAverage";
@@ -38,21 +38,27 @@ async function getPriorContext(memberId: number, currentMeetingId: number): Prom
   return rows.filter((r) => r.meetingId !== currentMeetingId).map((r) => ({ meetingTitle: r.meetingTitle, summary: r.summary }));
 }
 
+// "Pending" = a statement with no statement_insights row yet. Both helpers below express
+// that as a LEFT JOIN ... WHERE statement_insights.id IS NULL so the anti-join runs in
+// Postgres. They used to pull both tables into JS and diff them there, which was fine as a
+// once-per-CLI-run query but is now hit every ~4s by the admin screen's batch polling.
 export async function getPendingStatementIds(limit?: number): Promise<number[]> {
-  const alreadyProcessed = await db.select({ statementId: statementInsights.statementId }).from(statementInsights);
-  const processedIds = alreadyProcessed.map((r) => r.statementId);
-  const base = processedIds.length
-    ? db.select({ id: statements.id }).from(statements).where(notInArray(statements.id, processedIds))
-    : db.select({ id: statements.id }).from(statements);
+  const base = db
+    .select({ id: statements.id })
+    .from(statements)
+    .leftJoin(statementInsights, eq(statementInsights.statementId, statements.id))
+    .where(isNull(statementInsights.id));
   const rows = limit ? await base.limit(limit) : await base;
   return rows.map((s) => s.id);
 }
 
 export async function countPendingStatements(): Promise<number> {
-  const allIds = await db.select({ id: statements.id }).from(statements);
-  const processedRows = await db.select({ statementId: statementInsights.statementId }).from(statementInsights);
-  const processedSet = new Set(processedRows.map((r) => r.statementId));
-  return allIds.filter((s) => !processedSet.has(s.id)).length;
+  const [row] = await db
+    .select({ value: count() })
+    .from(statements)
+    .leftJoin(statementInsights, eq(statementInsights.statementId, statements.id))
+    .where(isNull(statementInsights.id));
+  return row?.value ?? 0;
 }
 
 export type ProcessOutcome = "processed" | "excluded" | "failed";
