@@ -1,5 +1,6 @@
 // backend/scripts/scrape/session.ts
-import { chromium, type Browser, type Page } from "playwright";
+import type { Browser, Page } from "playwright-core";
+import { launchChromium } from "./launchBrowser";
 
 export interface CouncilSession {
   page: Page;
@@ -7,7 +8,7 @@ export interface CouncilSession {
 }
 
 export async function openCouncilSession(): Promise<{ browser: Browser; session: CouncilSession }> {
-  const browser = await chromium.launch();
+  const browser = await launchChromium();
   const page = await browser.newPage();
   await page.goto("https://www.gjcl.go.kr/kr/minutes/committee.do");
   const csrfToken = await page.locator("meta#csrf").getAttribute("content");

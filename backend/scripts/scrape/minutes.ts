@@ -1,5 +1,5 @@
 // backend/scripts/scrape/minutes.ts
-import { chromium } from "playwright";
+import { launchChromium } from "./launchBrowser";
 import * as cheerio from "cheerio";
 
 export interface ScrapedStatement {
@@ -117,7 +117,7 @@ export function parseMinutesHtml(html: string): ScrapedStatement[] {
 }
 
 export async function scrapeMinutes(meetingUrl: string): Promise<ScrapedStatement[]> {
-  const browser = await chromium.launch();
+  const browser = await launchChromium();
   try {
     const page = await browser.newPage();
     await page.goto(meetingUrl);
