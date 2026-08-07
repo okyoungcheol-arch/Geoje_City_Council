@@ -43,18 +43,34 @@ export const statements = pgTable("statements", {
   uniqStatement: uniqueIndex("statements_meeting_member_order_idx").on(t.meetingId, t.memberId, t.orderInMeeting),
 }));
 
+// 8-axis weighted rubric per root CLAUDE.md v1.1 (§3/§4/§6.1). Replaces the earlier
+// 5-axis unweighted system entirely — see docs/superpowers/specs/2026-08-07-gjcl-member-
+// evaluation-rubric-design.md for the migration rationale.
 export const statementInsights = pgTable("statement_insights", {
   id: serial("id").primaryKey(),
   statementId: integer("statement_id").notNull().references(() => statements.id).unique(),
   summary: text("summary").notNull(), // Sonnet 5 output
   tags: jsonb("tags").$type<string[]>().notNull(), // Sonnet 5 output
-  learningLevel: integer("learning_level").notNull(), // 1-5, Opus 5
-  questionScore: integer("question_score").notNull(), // 1-5, Opus 5
-  ideaScore: integer("idea_score").notNull(), // 1-5, Opus 5
-  feasibilityScore: integer("feasibility_score").notNull(), // 1-5, Opus 5
-  geojeImpactScore: integer("geoje_impact_score").notNull(), // 1-5, Opus 5
-  rationale: text("rationale").notNull(), // Opus 5's short justification for the 5 scores
+  // Sonnet 5 classifies two exclusion cases before Opus 5 is ever called (CLAUDE.md §1.2):
+  // procedural (의사진행) turns, and turns from speakers who aren't council members at all
+  // (집행부/사무국 staff — detected via lib/members/isNonMemberSpeaker.ts on the raw scraped
+  // name, not by Sonnet). Excluded turns get no Opus 5 score, so all score/rubric columns
+  // below are nullable.
+  excludedReason: text("excluded_reason"), // "의사진행 발언" | "의원 아님(집행부/사무국)" | null
+  speechType: text("speech_type"), // "five_min" | "budget_review" | "admin_audit" | "ordinance_proposal"; null if excluded
+  creativity: integer("creativity"), // ① 1-5, Opus 5
+  feasibility: integer("feasibility"), // ② 1-5, Opus 5
+  evidenceLegal: integer("evidence_legal"), // ③ 1-5, Opus 5
+  persistence: integer("persistence"), // ④ 1-5, Opus 5; null when persistenceStatus is pending_future_evaluation
+  persistenceStatus: text("persistence_status"), // "scored" | "pending_future_evaluation"
+  oversight: integer("oversight"), // ⑤ 1-5, Opus 5
+  citizenBenefit: integer("citizen_benefit"), // ⑥ 1-5, Opus 5
+  futureStrategy: integer("future_strategy"), // ⑦ 1-5, Opus 5
+  cityDevelopment: integer("city_development"), // ⑧ 1-5, Opus 5
+  weightedScore: text("weighted_score"), // §4 formula result, stored as text to avoid float drift; null if excluded
+  topicsToWatch: jsonb("topics_to_watch").$type<string[]>(), // "향후 감시할 주제" (표1 column), Opus 5 output
+  rationale: text("rationale"), // Opus 5's short justification; null if excludedReason is set
   sonnetModel: text("sonnet_model").notNull(),
-  opusModel: text("opus_model").notNull(),
+  opusModel: text("opus_model"), // null if excludedReason is set (Opus 5 never called)
   processedAt: timestamp("processed_at").notNull().defaultNow(),
 });
