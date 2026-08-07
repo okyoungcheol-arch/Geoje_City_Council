@@ -18,10 +18,14 @@ export default function AdminScreen() {
   const [pin, setPin] = useState<string | null>(null);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState(false);
+  const [pinNetworkError, setPinNetworkError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState<string | null>(null);
   const [newMeetings, setNewMeetings] = useState<ScrapedMeetingSummary[] | null>(null);
   const [scrapingId, setScrapingId] = useState<string | null>(null);
+  const [scrapeError, setScrapeError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [processingError, setProcessingError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ processed: 0, excluded: 0, failed: 0, remaining: 0 });
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -33,20 +37,27 @@ export default function AdminScreen() {
   }, []);
 
   async function submitPin() {
-    const ok = await verifyPin(pinInput);
-    if (!ok) {
-      setPinError(true);
-      return;
+    try {
+      const ok = await verifyPin(pinInput);
+      if (!ok) {
+        setPinError(true);
+        return;
+      }
+      await savePin(pinInput);
+      setPin(pinInput);
+    } catch (err) {
+      setPinNetworkError("네트워크 오류: PIN 확인에 실패했습니다");
     }
-    await savePin(pinInput);
-    setPin(pinInput);
   }
 
   async function handleCheck() {
     if (!pin) return;
     setChecking(true);
+    setCheckError(null);
     try {
       setNewMeetings(await checkNewMeetings(pin));
+    } catch (err) {
+      setCheckError("신규 회의 확인 실패");
     } finally {
       setChecking(false);
     }
@@ -55,9 +66,12 @@ export default function AdminScreen() {
   async function handleScrape(meeting: ScrapedMeetingSummary) {
     if (!pin) return;
     setScrapingId(meeting.sourceMeetingId);
+    setScrapeError(null);
     try {
       await scrapeMeeting(pin, meeting);
       setNewMeetings((prev) => (prev ? prev.filter((m) => m.sourceMeetingId !== meeting.sourceMeetingId) : prev));
+    } catch (err) {
+      setScrapeError(`스크래핑 실패: ${meeting.title}`);
     } finally {
       setScrapingId(null);
     }
@@ -65,22 +79,28 @@ export default function AdminScreen() {
 
   async function pollOnce() {
     if (!pin) return;
-    const result = await processBatch(pin, BATCH_LIMIT);
-    setProgress((prev) => ({
-      processed: prev.processed + result.processed,
-      excluded: prev.excluded + result.excluded,
-      failed: prev.failed + result.failed,
-      remaining: result.remaining,
-    }));
-    if (result.remaining > 0) {
-      pollTimer.current = setTimeout(pollOnce, POLL_INTERVAL_MS);
-    } else {
+    try {
+      const result = await processBatch(pin, BATCH_LIMIT);
+      setProgress((prev) => ({
+        processed: prev.processed + result.processed,
+        excluded: prev.excluded + result.excluded,
+        failed: prev.failed + result.failed,
+        remaining: result.remaining,
+      }));
+      if (result.remaining > 0) {
+        pollTimer.current = setTimeout(pollOnce, POLL_INTERVAL_MS);
+      } else {
+        setProcessing(false);
+      }
+    } catch (err) {
+      setProcessingError("발언 처리 실패");
       setProcessing(false);
     }
   }
 
   function startProcessing() {
     setProgress({ processed: 0, excluded: 0, failed: 0, remaining: 0 });
+    setProcessingError(null);
     setProcessing(true);
     pollOnce();
   }
@@ -100,12 +120,14 @@ export default function AdminScreen() {
           onChangeText={(v) => {
             setPinInput(v);
             setPinError(false);
+            setPinNetworkError(null);
           }}
           secureTextEntry
           keyboardType="number-pad"
           placeholder="PIN 입력"
         />
         {pinError && <Text style={styles.error}>잘못된 PIN입니다</Text>}
+        {pinNetworkError && <Text style={styles.error}>{pinNetworkError}</Text>}
         <Pressable style={styles.button} onPress={submitPin}>
           <Text style={styles.buttonLabel}>확인</Text>
         </Pressable>
@@ -119,6 +141,7 @@ export default function AdminScreen() {
       <Pressable style={styles.button} onPress={handleCheck} disabled={checking}>
         {checking ? <ActivityIndicator color={colors.background.normal} /> : <Text style={styles.buttonLabel}>체크하기</Text>}
       </Pressable>
+      {checkError && <Text style={styles.error}>{checkError}</Text>}
 
       {newMeetings && newMeetings.length === 0 && <Text style={styles.body}>신규 회의 없음</Text>}
       {newMeetings?.map((m) => (
@@ -133,6 +156,7 @@ export default function AdminScreen() {
           </Pressable>
         </View>
       ))}
+      {scrapeError && <Text style={styles.error}>{scrapeError}</Text>}
 
       <Text style={styles.sectionTitle}>발언 처리</Text>
       {processing ? (
@@ -145,9 +169,12 @@ export default function AdminScreen() {
           </Pressable>
         </>
       ) : (
-        <Pressable style={styles.button} onPress={startProcessing}>
-          <Text style={styles.buttonLabel}>처리 시작</Text>
-        </Pressable>
+        <>
+          <Pressable style={styles.button} onPress={startProcessing}>
+            <Text style={styles.buttonLabel}>처리 시작</Text>
+          </Pressable>
+          {processingError && <Text style={styles.error}>{processingError}</Text>}
+        </>
       )}
     </ScrollView>
   );
