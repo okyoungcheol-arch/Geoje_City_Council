@@ -66,23 +66,23 @@ export async function processOneStatement(statementId: number): Promise<ProcessR
   const [stmt] = await db.select().from(statements).where(eq(statements.id, statementId));
   if (!stmt) return { statementId, outcome: "failed", reason: "statement not found" };
 
-  const [member] = await db.select().from(members).where(eq(members.id, stmt.memberId));
-  const agendaTitle = stmt.agendaItemId
-    ? (await db.select().from(agendaItems).where(eq(agendaItems.id, stmt.agendaItemId)))[0]?.title ?? null
-    : null;
-
-  if (isNonMemberSpeaker(member.name)) {
-    await db.insert(statementInsights).values({
-      statementId: stmt.id,
-      summary: stmt.rawText.slice(0, 200),
-      tags: [],
-      excludedReason: "의원 아님(집행부/사무국)",
-      sonnetModel: "n/a",
-    });
-    return { statementId, outcome: "excluded", reason: "의원 아님(집행부/사무국)" };
-  }
-
   try {
+    const [member] = await db.select().from(members).where(eq(members.id, stmt.memberId));
+    const agendaTitle = stmt.agendaItemId
+      ? (await db.select().from(agendaItems).where(eq(agendaItems.id, stmt.agendaItemId)))[0]?.title ?? null
+      : null;
+
+    if (isNonMemberSpeaker(member.name)) {
+      await db.insert(statementInsights).values({
+        statementId: stmt.id,
+        summary: stmt.rawText.slice(0, 200),
+        tags: [],
+        excludedReason: "의원 아님(집행부/사무국)",
+        sonnetModel: "n/a",
+      });
+      return { statementId, outcome: "excluded", reason: "의원 아님(집행부/사무국)" };
+    }
+
     const { summary, tags, isProcedural, speechType } = await withRetry(() =>
       summarizeStatement(stmt.rawText, agendaTitle)
     );

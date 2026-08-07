@@ -15,13 +15,21 @@ async function run() {
     i++;
     if (i % 25 === 0) console.log(`--- progress: ${i}/${total} ---`);
 
-    const result = await processOneStatement(id);
-    if (result.outcome === "processed") {
-      console.log(`Processed statement ${result.statementId}`);
-    } else if (result.outcome === "excluded") {
-      console.log(`Excluded statement ${result.statementId} (${result.reason})`);
-    } else {
-      console.error(`Failed statement ${result.statementId}: ${result.reason}`);
+    try {
+      const result = await processOneStatement(id);
+      if (result.outcome === "processed") {
+        console.log(`Processed statement ${result.statementId}`);
+      } else if (result.outcome === "excluded") {
+        console.log(`Excluded statement ${result.statementId} (${result.reason})`);
+      } else {
+        console.error(`Failed statement ${result.statementId}: ${result.reason}`);
+      }
+    } catch (err) {
+      // Defense in depth: processOneStatement resolves failures to a "failed"
+      // ProcessResult for everything after its initial statement fetch, but a
+      // single statement's unexpected error must never abort the rest of the
+      // ~2412-statement batch.
+      console.error(`Failed statement ${id}:`, err);
     }
 
     // Politeness delay between statements — avoids re-triggering the account's
