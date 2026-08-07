@@ -1,4 +1,4 @@
-import { test, expect, vi } from "vitest";
+import { test, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/scrape/upsertMeeting", () => ({
@@ -16,8 +16,12 @@ const sampleMeeting = {
   sessionRound: "제265회",
   sessionNo: "제1차",
   meetingDate: "2026-08-10",
-  sourceUrl: "https://x/200",
+  sourceUrl: "https://www.gjcl.go.kr/viewer/minutes.do?uid=200",
 };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 test("scrapes the given meeting and returns the added-statement count", async () => {
   const req = new NextRequest("http://localhost:3000/api/admin/scrape-meeting", {
@@ -49,4 +53,35 @@ test("returns 400 when the meeting body is missing required fields", async () =>
   });
   const res = await POST(req);
   expect(res.status).toBe(400);
+});
+
+// SSRF guard: the route drives a server-side headless browser to sourceUrl, so a
+// PIN holder must not be able to point it at an arbitrary host.
+test("returns 400 when sourceUrl is on a non-council origin", async () => {
+  const req = new NextRequest("http://localhost:3000/api/admin/scrape-meeting", {
+    method: "POST",
+    headers: { "x-admin-pin": "1234", "content-type": "application/json" },
+    body: JSON.stringify({
+      meeting: { ...sampleMeeting, sourceUrl: "http://169.254.169.254/latest/meta-data/" },
+    }),
+  });
+  const res = await POST(req);
+  const body = await res.json();
+  expect(res.status).toBe(400);
+  expect(body.error).toBe("invalid meeting payload");
+  expect(body.issues.some((i: { path: string[] }) => i.path.includes("sourceUrl"))).toBe(true);
+  expect(upsertScrapedMeeting).not.toHaveBeenCalled();
+});
+
+test("returns 400 when sourceUrl only looks like the council host (subdomain spoof)", async () => {
+  const req = new NextRequest("http://localhost:3000/api/admin/scrape-meeting", {
+    method: "POST",
+    headers: { "x-admin-pin": "1234", "content-type": "application/json" },
+    body: JSON.stringify({
+      meeting: { ...sampleMeeting, sourceUrl: "https://www.gjcl.go.kr.evil.example/viewer/minutes.do?uid=200" },
+    }),
+  });
+  const res = await POST(req);
+  expect(res.status).toBe(400);
+  expect(upsertScrapedMeeting).not.toHaveBeenCalled();
 });
