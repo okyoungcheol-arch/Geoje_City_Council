@@ -12,7 +12,9 @@ import {
 import { colors, typography, spacing, radius } from "@/theme/tokens";
 
 const POLL_INTERVAL_MS = 4000;
-const BATCH_LIMIT = 5;
+// Must stay <= the backend's MAX_LIMIT (backend/app/api/admin/process-batch/route.ts),
+// which clamps anything larger server-side. Keep the two in sync.
+const BATCH_LIMIT = 3;
 
 export default function AdminScreen() {
   const [pin, setPin] = useState<string | null>(null);
@@ -28,26 +30,45 @@ export default function AdminScreen() {
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ processed: 0, excluded: 0, failed: 0, remaining: 0 });
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Guards against an in-flight processBatch request resuming the poll loop after the
+  // user pressed 일시정지 or left the screen. Clearing pollTimer alone is not enough:
+  // the pending request's continuation would still schedule a fresh setTimeout (and
+  // setState after unmount).
+  const activeRef = useRef(true);
 
   useEffect(() => {
-    loadPin().then(setPin);
+    // expo-secure-store throws on web; a storage-read failure should just leave the
+    // PIN gate showing rather than produce an unhandled rejection at mount.
+    loadPin()
+      .then(setPin)
+      .catch(() => setPin(null));
     return () => {
+      activeRef.current = false;
       if (pollTimer.current) clearTimeout(pollTimer.current);
     };
   }, []);
 
   async function submitPin() {
+    let ok: boolean;
     try {
-      const ok = await verifyPin(pinInput);
-      if (!ok) {
-        setPinError(true);
-        return;
-      }
-      await savePin(pinInput);
-      setPin(pinInput);
+      ok = await verifyPin(pinInput);
     } catch (err) {
       setPinNetworkError("네트워크 오류: PIN 확인에 실패했습니다");
+      return;
     }
+    if (!ok) {
+      setPinError(true);
+      return;
+    }
+    // Verification succeeded. Persisting the PIN is a convenience for next launch and
+    // throws on web (expo-secure-store) — never let that failure block access, and never
+    // surface it as a PIN-verification error.
+    try {
+      await savePin(pinInput);
+    } catch (err) {
+      console.error("PIN 저장 실패 (이번 세션 사용에는 영향 없음)", err);
+    }
+    setPin(pinInput);
   }
 
   async function handleCheck() {
@@ -81,24 +102,38 @@ export default function AdminScreen() {
     if (!pin) return;
     try {
       const result = await processBatch(pin, BATCH_LIMIT);
+      if (!activeRef.current) return;
       setProgress((prev) => ({
         processed: prev.processed + result.processed,
         excluded: prev.excluded + result.excluded,
         failed: prev.failed + result.failed,
         remaining: result.remaining,
       }));
+      // Poison-statement guard. Failed statements are deliberately not persisted to
+      // statement_insights so they can be retried, which means a deterministically
+      // failing statement stays at the head of every subsequent batch. If a batch made
+      // literally zero forward progress (nothing processed, nothing excluded) and only
+      // produced failures, stop instead of polling forever and burning paid AI calls on
+      // the same doomed statements. A batch mixing successes and failures keeps going.
+      if (result.processed === 0 && result.excluded === 0 && result.failed > 0) {
+        setProcessingError("일부 발언 처리에 실패했습니다 — 반복 실패로 자동 중지되었습니다");
+        setProcessing(false);
+        return;
+      }
       if (result.remaining > 0) {
         pollTimer.current = setTimeout(pollOnce, POLL_INTERVAL_MS);
       } else {
         setProcessing(false);
       }
     } catch (err) {
+      if (!activeRef.current) return;
       setProcessingError("발언 처리 실패");
       setProcessing(false);
     }
   }
 
   function startProcessing() {
+    activeRef.current = true;
     setProgress({ processed: 0, excluded: 0, failed: 0, remaining: 0 });
     setProcessingError(null);
     setProcessing(true);
@@ -106,6 +141,7 @@ export default function AdminScreen() {
   }
 
   function stopProcessing() {
+    activeRef.current = false;
     if (pollTimer.current) clearTimeout(pollTimer.current);
     setProcessing(false);
   }
