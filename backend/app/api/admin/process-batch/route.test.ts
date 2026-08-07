@@ -30,14 +30,14 @@ test("tallies processed/excluded/failed and reports remaining count", async () =
   expect(body).toEqual({ processed: 1, excluded: 1, failed: 1, remaining: 339 });
 });
 
-test("clamps limit to the server-side maximum of 10", async () => {
+test("clamps limit to the server-side maximum of 3", async () => {
   const req = new NextRequest("http://localhost:3000/api/admin/process-batch", {
     method: "POST",
     headers: { "x-admin-pin": "1234", "content-type": "application/json" },
     body: JSON.stringify({ limit: 999 }),
   });
   await POST(req);
-  expect(getPendingStatementIds).toHaveBeenCalledWith(10);
+  expect(getPendingStatementIds).toHaveBeenCalledWith(3);
 });
 
 test("rejects requests without a valid PIN", async () => {

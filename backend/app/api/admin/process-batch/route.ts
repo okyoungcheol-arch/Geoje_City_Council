@@ -5,8 +5,13 @@ import { getPendingStatementIds, processOneStatement, countPendingStatements } f
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-const DEFAULT_LIMIT = 5;
-const MAX_LIMIT = 10; // worst case ~10 * 39s (retries + delay) stays under maxDuration
+const DEFAULT_LIMIT = 3;
+const MAX_LIMIT = 3;
+// Conservative limit to stay safely under maxDuration=300s.
+// Each statement calls withRetry twice (summarizeStatement, scoreStatement), each with up to 3 attempts
+// and backoff sleeps (35s+ per exhausted withRetry). Worst case per statement: ~70-100s+ when retries
+// are exhausted. With MAX_LIMIT=3, worst case ~210-300s total, leaving safety margin for DB queries.
+// Real production latency will tune this further, but 3 is defensibly conservative for now.
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireAdminPin(request);
@@ -22,10 +27,15 @@ export async function POST(request: NextRequest) {
   let excluded = 0;
   let failed = 0;
   for (const id of ids) {
-    const result = await processOneStatement(id);
-    if (result.outcome === "processed") processed++;
-    else if (result.outcome === "excluded") excluded++;
-    else failed++;
+    try {
+      const result = await processOneStatement(id);
+      if (result.outcome === "processed") processed++;
+      else if (result.outcome === "excluded") excluded++;
+      else failed++;
+    } catch (error) {
+      failed++;
+      console.error(`Error processing statement ${id}:`, error);
+    }
   }
 
   const remaining = await countPendingStatements();
