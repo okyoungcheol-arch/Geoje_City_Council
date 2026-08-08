@@ -7,7 +7,7 @@ import { InsightFilters } from "@/components/InsightFilters";
 import { OverviewTab } from "@/components/table1/OverviewTab";
 import { ScoreGridTab } from "@/components/table1/ScoreGridTab";
 import { weightFootnote, type SpeechType } from "@/lib/axes";
-import { colors, spacing, typography } from "@/theme/tokens";
+import { colors, spacing, typography, radius } from "@/theme/tokens";
 
 type Tab = "overview" | "scores";
 
@@ -87,7 +87,7 @@ export default function IndexScreen() {
       {tab === "overview" ? (
         <OverviewTab rows={filtered} />
       ) : (
-        <ScoreGridTab rows={filtered} footnote={weightFootnote(speechTypesUsed)} />
+        <ScoreGridTab rows={filtered} footnote={meetingFilter ? weightFootnote(speechTypesUsed) : ""} />
       )}
     </View>
   );
@@ -106,10 +106,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginHorizontal: spacing[12],
     backgroundColor: colors.fill.normal,
-    borderRadius: 8,
+    borderRadius: radius[8],
     padding: spacing[2],
   },
-  tabButton: { flex: 1, paddingVertical: spacing[8], alignItems: "center", borderRadius: 6 },
+  tabButton: { flex: 1, paddingVertical: spacing[8], alignItems: "center", borderRadius: radius[6] },
   tabButtonActive: { backgroundColor: colors.background.normal },
   tabLabel: { ...typography.label1, color: colors.label.alternative },
   tabLabelActive: { color: colors.primary.normal },
