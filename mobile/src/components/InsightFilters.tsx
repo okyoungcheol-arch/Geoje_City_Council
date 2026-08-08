@@ -7,10 +7,10 @@ interface Props {
   meetings: string[];
   memberFilter: string;
   meetingFilter: string;
-  minGeojeImpact: number;
+  minWeightedScore: number;
   onMemberChange: (v: string) => void;
   onMeetingChange: (v: string) => void;
-  onMinGeojeImpactChange: (v: number) => void;
+  onMinWeightedScoreChange: (v: number) => void;
 }
 
 export function InsightFilters({
@@ -18,10 +18,10 @@ export function InsightFilters({
   meetings,
   memberFilter,
   meetingFilter,
-  minGeojeImpact,
+  minWeightedScore,
   onMemberChange,
   onMeetingChange,
-  onMinGeojeImpactChange,
+  onMinWeightedScoreChange,
 }: Props) {
   return (
     <View style={styles.container}>
@@ -47,8 +47,8 @@ export function InsightFilters({
       </ScrollView>
       <View style={styles.row}>
         {[1, 2, 3, 4, 5].map((n) => (
-          <Pressable key={n} onPress={() => onMinGeojeImpactChange(n)} style={[styles.pill, minGeojeImpact === n && styles.pillActive]}>
-            <Text style={[styles.pillLabel, minGeojeImpact === n && styles.pillLabelActive]}>거제영향도 ≥ {n}</Text>
+          <Pressable key={n} onPress={() => onMinWeightedScoreChange(n)} style={[styles.pill, minWeightedScore === n && styles.pillActive]}>
+            <Text style={[styles.pillLabel, minWeightedScore === n && styles.pillLabelActive]}>가중평균 ≥ {n}</Text>
           </Pressable>
         ))}
       </View>
