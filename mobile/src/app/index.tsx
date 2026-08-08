@@ -99,7 +99,7 @@ export default function IndexScreen() {
       ) : tab === "overview" ? (
         <OverviewTab rows={filtered} />
       ) : (
-        <ScoreGridTab rows={filtered} footnote={meetingFilter ? weightFootnote(speechTypesUsed) : ""} />
+        <ScoreGridTab rows={filtered} footnote={meetingFilter ? weightFootnote(speechTypesUsed, ["persistence"]) : ""} />
       )}
     </View>
   );

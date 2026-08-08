@@ -89,12 +89,17 @@ export const AXIS_WEIGHTS: Record<SpeechType, Record<Axis, number | null>> = {
   },
 };
 
-/** backend/app/table1/Table1Client.tsx의 weightFootnote()와 동일한 규칙. */
-export function weightFootnote(speechTypesUsed: SpeechType[]): string {
+/**
+ * backend/app/table1/Table1Client.tsx의 weightFootnote()와 동일한 규칙.
+ * excludeAxes로 넘긴 축은 각주에서도 빼서, 화면에 표시하지 않는 축의 가중치가
+ * 각주에만 남아 혼란을 주는 일이 없게 한다.
+ */
+export function weightFootnote(speechTypesUsed: SpeechType[], excludeAxes: Axis[] = []): string {
+  const axesToShow = AXES.filter((a) => !excludeAxes.includes(a));
   return speechTypesUsed
     .map((st) => {
       const weights = AXIS_WEIGHTS[st];
-      const parts = AXES.map((a) => `${AXIS_LABELS[a]} ${weights[a] === null ? "―(제외)" : weights[a]}`);
+      const parts = axesToShow.map((a) => `${AXIS_LABELS[a]} ${weights[a] === null ? "―(제외)" : weights[a]}`);
       return `[${SPEECH_TYPE_LABELS[st] ?? st}] ${parts.join(" · ")}`;
     })
     .join("\n");

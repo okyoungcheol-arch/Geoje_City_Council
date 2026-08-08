@@ -3,10 +3,14 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
 import type { InsightRow } from "@/lib/api";
 import { AXES, AXIS_LABELS, axisCellLabel } from "@/lib/axes";
-import { colors, typography, spacing, radius } from "@/theme/tokens";
+import { colors, typography, spacing } from "@/theme/tokens";
 
 const ROW_HEIGHT = 44;
 const SCORE_COLUMN_WIDTH = 64;
+
+// 지속성은 다회기 데이터가 쌓이기 전까지 항상 "향후평가"만 표시돼 이 화면에서는 뺀다
+// (요청: 사용자 화면 피드백). statement/[id].tsx의 표2 상세에는 그대로 남겨둔다.
+const DISPLAY_AXES = AXES.filter((axis) => axis !== "persistence");
 
 export function ScoreGridTab({ rows, footnote }: { rows: InsightRow[]; footnote: string }) {
   const sorted = [...rows].sort((a, b) => b.weightedScore - a.weightedScore);
@@ -32,7 +36,7 @@ export function ScoreGridTab({ rows, footnote }: { rows: InsightRow[]; footnote:
         <ScrollView horizontal showsHorizontalScrollIndicator style={styles.grid}>
           <View>
             <View style={styles.dataRow}>
-              {AXES.map((axis) => (
+              {DISPLAY_AXES.map((axis) => (
                 <View key={axis} style={[styles.cell, styles.scoreCell, styles.headerCell]}>
                   <Text style={styles.headerLabel}>{AXIS_LABELS[axis]}</Text>
                 </View>
@@ -40,17 +44,9 @@ export function ScoreGridTab({ rows, footnote }: { rows: InsightRow[]; footnote:
             </View>
             {sorted.map((row) => (
               <View key={row.statementId} style={styles.dataRow}>
-                {AXES.map((axis) => (
+                {DISPLAY_AXES.map((axis) => (
                   <View key={axis} style={[styles.cell, styles.scoreCell]}>
-                    <Text
-                      style={
-                        axis === "persistence" && row.persistenceStatus === "pending_future_evaluation"
-                          ? styles.pendingBadge
-                          : styles.scoreLabel
-                      }
-                    >
-                      {axisCellLabel(row[axis], axis, row.persistenceStatus)}
-                    </Text>
+                    <Text style={styles.scoreLabel}>{axisCellLabel(row[axis], axis, row.persistenceStatus)}</Text>
                   </View>
                 ))}
               </View>
@@ -88,14 +84,5 @@ const styles = StyleSheet.create({
   headerLabel: { ...typography.label2, color: colors.label.alternative },
   memberLabel: { ...typography.label1, color: colors.primary.normal },
   scoreLabel: { ...typography.body2, color: colors.label.normal },
-  pendingBadge: {
-    ...typography.caption2,
-    color: colors.label.alternative,
-    backgroundColor: colors.fill.normal,
-    borderRadius: radius[6],
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[2],
-    overflow: "hidden",
-  },
   footnote: { ...typography.caption2, color: colors.label.alternative, marginTop: spacing[12] },
 });
