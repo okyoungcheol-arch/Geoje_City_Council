@@ -12,7 +12,7 @@ export function ScoreGridTab({ rows, footnote }: { rows: InsightRow[]; footnote:
   const sorted = [...rows].sort((a, b) => b.weightedScore - a.weightedScore);
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.tableRow}>
         <View style={styles.stickyColumn}>
           <View style={[styles.cell, styles.headerCell, styles.memberCell]}>
@@ -60,12 +60,13 @@ export function ScoreGridTab({ rows, footnote }: { rows: InsightRow[]; footnote:
       </View>
 
       <Text style={styles.footnote}>{footnote}</Text>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing[12] },
+  container: { flex: 1 },
+  contentContainer: { padding: spacing[12] },
   tableRow: { flexDirection: "row" },
   stickyColumn: {
     borderRightWidth: 1,
