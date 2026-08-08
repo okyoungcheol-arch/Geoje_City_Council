@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   scoreBadge: {
     alignSelf: "flex-start",
     backgroundColor: colors.fill.normal,
-    borderRadius: 8,
+    borderRadius: radius[8],
     paddingHorizontal: spacing[10],
     paddingVertical: spacing[4],
     marginBottom: spacing[12],
