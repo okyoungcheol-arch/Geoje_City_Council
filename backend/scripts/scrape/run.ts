@@ -1,6 +1,6 @@
 // backend/scripts/scrape/run.ts
-import { openCouncilSession } from "./session";
-import { scrapeCategories, scrapeMeetingList } from "./meetingList";
+import { launchChromium } from "./launchBrowser";
+import { scrapeLateDoPage } from "./meetingList";
 import { upsertScrapedMeeting } from "@/lib/scrape/upsertMeeting";
 
 async function sleep(ms: number) {
@@ -8,35 +8,41 @@ async function sleep(ms: number) {
 }
 
 async function run() {
-  const { browser, session } = await openCouncilSession();
-  const categories = await scrapeCategories(session);
+  const browser = await launchChromium();
+  const page = await browser.newPage();
   const failures: { title: string; sourceUrl: string; error: string }[] = [];
+  let pageNo = 1;
+  let totalMeetings = 0;
 
-  for (const category of categories) {
-    await sleep(1500);
-    const meetingRows = await scrapeMeetingList(session, category);
+  try {
+    while (true) {
+      await sleep(1500); // polite delay before each late.do page request
+      const rows = await scrapeLateDoPage(page, pageNo);
+      if (rows.length === 0) break; // no more 제10대 rows on this page or beyond
 
-    for (const m of meetingRows) {
-      await sleep(1500); // be polite to the source site
+      for (const m of rows) {
+        await sleep(1500); // polite delay before each minutes document fetch
 
-      // A single meeting's browser launch/parse can fail transiently (confirmed during
-      // Task 6 live validation on 2026-08-06: chrome-headless-shell crashed mid-batch on
-      // one meeting) — this is a long, one-shot run across every 제10대 committee, so one
-      // bad meeting must not abort the whole scrape. Catch, record, and move on.
-      try {
-        const { statementsAdded } = await upsertScrapedMeeting(m);
-        console.log(`Scraped: ${m.title} (${statementsAdded} new statements, category=${category.label})`);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`FAILED: ${m.title} (category=${category.label}, url=${m.sourceUrl}): ${message}`);
-        failures.push({ title: m.title, sourceUrl: m.sourceUrl, error: message });
+        // A single meeting's browser launch/parse can fail transiently — this is a long,
+        // multi-page run across the whole 제10대 term, so one bad meeting must not abort
+        // the whole scrape. Catch, record, and move on.
+        try {
+          const { statementsAdded } = await upsertScrapedMeeting(m);
+          console.log(`Scraped: ${m.title} (${statementsAdded} new statements, page=${pageNo})`);
+          totalMeetings++;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error(`FAILED: ${m.title} (page=${pageNo}, url=${m.sourceUrl}): ${message}`);
+          failures.push({ title: m.title, sourceUrl: m.sourceUrl, error: message });
+        }
       }
+      pageNo++;
     }
+  } finally {
+    await browser.close();
   }
 
-  await browser.close();
-
-  console.log(`\nDone. ${failures.length} meeting(s) failed.`);
+  console.log(`\nDone. ${totalMeetings} meeting(s) processed across ${pageNo - 1} page(s). ${failures.length} failed.`);
   if (failures.length > 0) {
     console.log(JSON.stringify(failures, null, 2));
   }
