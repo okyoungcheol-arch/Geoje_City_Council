@@ -8,22 +8,11 @@ interface Props {
   meetings: string[];
   memberFilter: string;
   meetingFilter: string;
-  minWeightedScore: number;
   onMemberChange: (v: string) => void;
   onMeetingChange: (v: string) => void;
-  onMinWeightedScoreChange: (v: number) => void;
 }
 
-export function InsightFilters({
-  members,
-  meetings,
-  memberFilter,
-  meetingFilter,
-  minWeightedScore,
-  onMemberChange,
-  onMeetingChange,
-  onMinWeightedScoreChange,
-}: Props) {
+export function InsightFilters({ members, meetings, memberFilter, meetingFilter, onMemberChange, onMeetingChange }: Props) {
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
@@ -46,13 +35,6 @@ export function InsightFilters({
           </Pressable>
         ))}
       </ScrollView>
-      <View style={styles.row}>
-        {[1, 2, 3, 4, 5].map((n) => (
-          <Pressable key={n} onPress={() => onMinWeightedScoreChange(n)} style={[styles.pill, minWeightedScore === n && styles.pillActive]}>
-            <Text style={[styles.pillLabel, minWeightedScore === n && styles.pillLabelActive]}>가중평균 ≥ {n}</Text>
-          </Pressable>
-        ))}
-      </View>
     </View>
   );
 }

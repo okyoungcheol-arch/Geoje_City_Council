@@ -16,7 +16,6 @@ export default function IndexScreen() {
   const [fetchFailed, setFetchFailed] = useState(false);
   const [memberFilter, setMemberFilter] = useState("");
   const [meetingFilter, setMeetingFilter] = useState("");
-  const [minWeightedScore, setMinWeightedScore] = useState(1);
   const [tab, setTab] = useState<Tab>("overview");
 
   useEffect(() => {
@@ -32,10 +31,7 @@ export default function IndexScreen() {
   const meetings = useMemo(() => [...new Set((rows ?? []).map((r) => r.meetingTitle))].sort(), [rows]);
 
   const filtered = (rows ?? []).filter(
-    (r) =>
-      (!memberFilter || r.memberName === memberFilter) &&
-      (!meetingFilter || r.meetingTitle === meetingFilter) &&
-      r.weightedScore >= minWeightedScore
+    (r) => (!memberFilter || r.memberName === memberFilter) && (!meetingFilter || r.meetingTitle === meetingFilter)
   );
 
   const speechTypesUsed = useMemo(
@@ -58,10 +54,8 @@ export default function IndexScreen() {
         meetings={meetings}
         memberFilter={memberFilter}
         meetingFilter={meetingFilter}
-        minWeightedScore={minWeightedScore}
         onMemberChange={setMemberFilter}
         onMeetingChange={setMeetingFilter}
-        onMinWeightedScoreChange={setMinWeightedScore}
       />
 
       <View style={styles.linkRow}>
@@ -80,13 +74,17 @@ export default function IndexScreen() {
           <Text style={styles.disclaimer}>회의를 선택하면 해당 회의의 표1로 전환됩니다.</Text>
         </View>
       )}
+      <Text style={styles.weightExplainer}>
+        가중평균은 발언 유형(5분 이상 발언·예산·결산 심의·행정사무감사·조례 발안 설명)에 따라 8개 채점 항목에 서로
+        다른 가중치를 곱해 합산한 값입니다. 항목별 가중치는 &apos;세부항목&apos; 탭에서 확인할 수 있습니다.
+      </Text>
 
       <View style={styles.tabBar}>
         <Pressable style={[styles.tabButton, tab === "overview" && styles.tabButtonActive]} onPress={() => setTab("overview")}>
           <Text style={[styles.tabLabel, tab === "overview" && styles.tabLabelActive]}>개요</Text>
         </Pressable>
         <Pressable style={[styles.tabButton, tab === "scores" && styles.tabButtonActive]} onPress={() => setTab("scores")}>
-          <Text style={[styles.tabLabel, tab === "scores" && styles.tabLabelActive]}>축별 점수</Text>
+          <Text style={[styles.tabLabel, tab === "scores" && styles.tabLabelActive]}>세부항목</Text>
         </Pressable>
       </View>
 
@@ -117,6 +115,12 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing[12], paddingTop: spacing[4], paddingBottom: spacing[8] },
   title: { ...typography.headline1, color: colors.label.normal },
   disclaimer: { ...typography.caption1, color: colors.label.alternative, marginTop: spacing[4] },
+  weightExplainer: {
+    ...typography.caption2,
+    color: colors.label.alternative,
+    paddingHorizontal: spacing[12],
+    paddingBottom: spacing[8],
+  },
   tabBar: {
     flexDirection: "row",
     marginHorizontal: spacing[12],

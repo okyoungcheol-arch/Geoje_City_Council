@@ -54,6 +54,8 @@ cd mobile && npx expo start               # 앱 로컬 실행 (Expo Go/시뮬레
 - DB는 Postgres (Vercel Marketplace/Neon), `@neondatabase/serverless` + `drizzle-orm/neon-http`, 환경변수 `DATABASE_URL`.
 - 스크래핑은 요청 사이 1~2초 지연, robots.txt 준수. 병렬로 몰아서 요청하지 않는다.
 - 파이프라인은 재실행해도 안전해야 한다 (이미 처리된 `statementId`는 건너뜀).
+- 의원 이름은 `backend/lib/members/roster.ts`의 명단(`Data/2026_거제시의원_당선자_명단.xlsx` 기준 16명)으로 **표시 시점에만** 정규화한다 — 같은 의원이 회의마다 "부의장 당선의원 임수환" / "부의장 임수환" / "임수환"처럼 다르게 표기돼도 화면에는 하나로 통일해 보여준다. `members` 테이블 자체는 원문 그대로 유지하며 병합하지 않는다(§ DB 마이그레이션 아님).
+- `getInsightRows()`는 정규화된 이름 기준으로 회의당 실질 발언 의원이 3명 미만이면 그 회의 전체를 결과에서 제외한다 — 의사진행 발언만 있거나 발언자가 소수라 표본으로 의미가 약한 회의를 걸러내는 규칙이다.
 
 ## 작업 방식
 
