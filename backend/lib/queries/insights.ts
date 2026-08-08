@@ -1,5 +1,5 @@
 import { db } from "@/db/client";
-import { meetings, members, statements, statementInsights } from "@/db/schema";
+import { meetings, members, statements, statementInsights, agendaItems } from "@/db/schema";
 import { eq, isNull } from "drizzle-orm";
 import { normalizeMemberName } from "@/lib/members/roster";
 
@@ -11,6 +11,7 @@ const MIN_SUBSTANTIVE_MEMBERS_PER_MEETING = 3;
 
 export interface InsightRow {
   statementId: number;
+  meetingId: number;
   meetingTitle: string;
   memberName: string;
   tags: string[];
@@ -37,33 +38,46 @@ export async function getInsightRows(): Promise<InsightRow[]> {
   // filter guarantees every row returned here has real, non-null Opus 5 scores (except
   // creativity, which can be legitimately null under the budget_review "―(제외)" weight,
   // and persistence, which can be legitimately null under pending_future_evaluation).
-  const rows = await db
-    .select({
-      statementId: statements.id,
-      meetingTitle: meetings.title,
-      memberName: members.name,
-      tags: statementInsights.tags,
-      topicsToWatch: statementInsights.topicsToWatch,
-      speechType: statementInsights.speechType,
-      creativity: statementInsights.creativity,
-      feasibility: statementInsights.feasibility,
-      evidenceLegal: statementInsights.evidenceLegal,
-      persistence: statementInsights.persistence,
-      persistenceStatus: statementInsights.persistenceStatus,
-      oversight: statementInsights.oversight,
-      citizenBenefit: statementInsights.citizenBenefit,
-      futureStrategy: statementInsights.futureStrategy,
-      cityDevelopment: statementInsights.cityDevelopment,
-      weightedScore: statementInsights.weightedScore,
-      summary: statementInsights.summary,
-      rawText: statements.rawText,
-      rationale: statementInsights.rationale,
-    })
-    .from(statementInsights)
-    .innerJoin(statements, eq(statementInsights.statementId, statements.id))
-    .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-    .innerJoin(members, eq(statements.memberId, members.id))
-    .where(isNull(statementInsights.excludedReason));
+  const [rows, meetingsWithAgendaItems] = await Promise.all([
+    db
+      .select({
+        statementId: statements.id,
+        meetingId: statements.meetingId,
+        meetingTitle: meetings.title,
+        memberName: members.name,
+        tags: statementInsights.tags,
+        topicsToWatch: statementInsights.topicsToWatch,
+        speechType: statementInsights.speechType,
+        creativity: statementInsights.creativity,
+        feasibility: statementInsights.feasibility,
+        evidenceLegal: statementInsights.evidenceLegal,
+        persistence: statementInsights.persistence,
+        persistenceStatus: statementInsights.persistenceStatus,
+        oversight: statementInsights.oversight,
+        citizenBenefit: statementInsights.citizenBenefit,
+        futureStrategy: statementInsights.futureStrategy,
+        cityDevelopment: statementInsights.cityDevelopment,
+        weightedScore: statementInsights.weightedScore,
+        summary: statementInsights.summary,
+        rawText: statements.rawText,
+        rationale: statementInsights.rationale,
+      })
+      .from(statementInsights)
+      .innerJoin(statements, eq(statementInsights.statementId, statements.id))
+      .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+      .innerJoin(members, eq(statements.memberId, members.id))
+      .where(isNull(statementInsights.excludedReason)),
+
+    // 부의된 안건(formally-tabled agenda item) 게이트: CLAUDE.md §1.1 "부의된 안건이 있는
+    // 회의만 평가". 회의가 agendaItems 0건이면 부의된 안건이 없는 것과 동치다 —
+    // upsertMeeting.ts가 5분자유발언을 제외한 실제 안건만 agendaItems로 적재하기 때문에
+    // (minutes.ts의 5분자유발언 섹션 전체 드롭 로직 참조), 별도 HTML 파싱이 필요 없다.
+    // JOIN이 아니라 별도 쿼리로 병렬 실행하는 이유: agendaItems는 회의당 1:N이라, meetings에
+    // 직접 JOIN하면 위 statementInsights 기본 행이 안건 개수만큼 중복된다.
+    db.selectDistinct({ meetingId: agendaItems.meetingId }).from(agendaItems),
+  ]);
+
+  const meetingIdsWithAgendaItems = new Set(meetingsWithAgendaItems.map((r) => r.meetingId));
 
   const normalized = rows.map((r) => ({
     ...r,
@@ -88,11 +102,13 @@ export async function getInsightRows(): Promise<InsightRow[]> {
     set.add(r.memberName);
     membersByMeeting.set(r.meetingTitle, set);
   }
-  const qualifyingMeetings = new Set(
+  const qualifyingMeetingTitles = new Set(
     [...membersByMeeting.entries()]
       .filter(([, memberSet]) => memberSet.size >= MIN_SUBSTANTIVE_MEMBERS_PER_MEETING)
       .map(([title]) => title)
   );
 
-  return normalized.filter((r) => qualifyingMeetings.has(r.meetingTitle));
+  return normalized.filter(
+    (r) => qualifyingMeetingTitles.has(r.meetingTitle) && meetingIdsWithAgendaItems.has(r.meetingId)
+  );
 }

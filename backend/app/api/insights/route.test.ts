@@ -5,6 +5,7 @@ import type { InsightRow } from "@/lib/queries/insights";
 function makeRow(overrides: Partial<InsightRow>): InsightRow {
   return {
     statementId: 1,
+    meetingId: 1,
     meetingTitle: "제264회 임시회 제1차 본회의",
     memberName: "홍길동",
     tags: ["재해예방"],

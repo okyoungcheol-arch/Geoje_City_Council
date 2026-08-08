@@ -4,6 +4,7 @@ import { getInsightRows } from "./insights";
 function makeRow(overrides: Record<string, unknown>) {
   return {
     statementId: 1,
+    meetingId: 1,
     meetingTitle: "제264회 임시회 제1차 본회의",
     memberName: "홍길동",
     tags: ["재해예방"],
@@ -26,15 +27,22 @@ function makeRow(overrides: Record<string, unknown>) {
   };
 }
 
-// 회의 A: 정규화 후 서로 다른 3명(홍길동/임수환/김영규)이 발언 — 포함 대상.
-// 회의 B: "임수환"과 "부의장 임수환"이 실제로는 동일 인물이라 정규화 후 2명뿐 — 3명 미만이라 제외.
+// 회의 A(meetingId 1): 정규화 후 3명(홍길동/임수환/김영규) 발언, agendaItems 있음 -> 포함.
+// 회의 B(meetingId 2): 정규화 후 2명뿐(임수환 중복 표기) -> 3명 미만으로 제외.
+// 회의 C(meetingId 3): 실질 발언 의원 3명 이상이지만 agendaItems가 0건(개회식류) -> 제외.
 const fixture = [
-  makeRow({ statementId: 1, meetingTitle: "회의 A", memberName: "홍길동" }),
-  makeRow({ statementId: 2, meetingTitle: "회의 A", memberName: "임수환" }),
-  makeRow({ statementId: 3, meetingTitle: "회의 A", memberName: "김영규" }),
-  makeRow({ statementId: 4, meetingTitle: "회의 B", memberName: "임수환" }),
-  makeRow({ statementId: 5, meetingTitle: "회의 B", memberName: "부의장 임수환" }),
+  makeRow({ statementId: 1, meetingId: 1, meetingTitle: "회의 A", memberName: "홍길동" }),
+  makeRow({ statementId: 2, meetingId: 1, meetingTitle: "회의 A", memberName: "임수환" }),
+  makeRow({ statementId: 3, meetingId: 1, meetingTitle: "회의 A", memberName: "김영규" }),
+  makeRow({ statementId: 4, meetingId: 2, meetingTitle: "회의 B", memberName: "임수환" }),
+  makeRow({ statementId: 5, meetingId: 2, meetingTitle: "회의 B", memberName: "부의장 임수환" }),
+  makeRow({ statementId: 6, meetingId: 3, meetingTitle: "회의 C", memberName: "홍길동" }),
+  makeRow({ statementId: 7, meetingId: 3, meetingTitle: "회의 C", memberName: "임수환" }),
+  makeRow({ statementId: 8, meetingId: 3, meetingTitle: "회의 C", memberName: "김영규" }),
 ];
+
+// meetingId 1에만 agendaItems가 있음 (회의 C=3은 없음 — 개회식류 시나리오)
+const agendaItemMeetingIds = [{ meetingId: 1 }];
 
 vi.mock("@/db/client", () => ({
   db: {
@@ -49,28 +57,26 @@ vi.mock("@/db/client", () => ({
         }),
       }),
     }),
+    selectDistinct: () => ({
+      from: () => Promise.resolve(agendaItemMeetingIds),
+    }),
   },
 }));
 
-test("rows from a meeting with 3+ distinct (normalized) members are included", async () => {
+test("a meeting with 3+ members and at least one agenda item is included", async () => {
   const rows = await getInsightRows();
-  const meetingATitles = rows.filter((r) => r.meetingTitle === "회의 A");
-  expect(meetingATitles).toHaveLength(3);
-  expect(meetingATitles.map((r) => r.memberName).sort()).toEqual(["김영규", "임수환", "홍길동"]);
+  const meetingA = rows.filter((r) => r.meetingTitle === "회의 A");
+  expect(meetingA).toHaveLength(3);
 });
 
-test("a meeting whose substantive speakers normalize down to under 3 is excluded entirely", async () => {
+test("a meeting under the 3-member threshold is excluded regardless of agenda items", async () => {
   const rows = await getInsightRows();
   expect(rows.some((r) => r.meetingTitle === "회의 B")).toBe(false);
 });
 
-test("member name variants collapse to the roster name before the 3-member count is taken", async () => {
-  // 회의 B가 통째로 제외된 것 자체가, "임수환"과 "부의장 임수환"을 서로 다른 사람으로 잘못 세지
-  // 않았다는 증거다(정규화 없이 세면 2명이 아니라 이미 서로 다른 이름 2개로 보여 우연히 같은
-  // 결과가 나올 수 있으므로, 정규화 함수가 실제로 두 표기를 하나로 합치는지도 별도 확인한다).
+test("a meeting with 3+ members but zero agendaItems rows is excluded (부의된 안건 게이트)", async () => {
   const rows = await getInsightRows();
-  const namesInMeetingA = rows.filter((r) => r.meetingTitle === "회의 A").map((r) => r.memberName);
-  expect(namesInMeetingA).toContain("임수환");
+  expect(rows.some((r) => r.meetingTitle === "회의 C")).toBe(false);
 });
 
 test("weightedScore is coerced to number and nullable axes stay null", async () => {
