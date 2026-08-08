@@ -4,10 +4,11 @@
 
 ## 프로젝트 한 줄 요약
 
-거제시의회 제10대 회의(5분자유발언 제외) 회의록을 수집해 Sonnet 5로 요약·태깅하고 Opus 5로 5개 축(학습수준·질의평점·아이디어점수·실행가능성·거제영향도)을 채점한 뒤, React Native(Expo) 모바일 앱으로 보여주는 시스템입니다. **영상 수집/재생/타임스탬프 이동 기능은 없습니다** — 태그를 탭하면 회의록 원문 화면으로 이동합니다.
+거제시의회 제10대 회의(5분자유발언 제외) 회의록을 수집해 Sonnet 5로 요약·태깅하고 Opus 5로 8개 축(창의성·실현가능성·근거법적·지속성·견제력·시민체감·미래전략·거제발전)을 가중평균으로 채점한 뒤, React Native(Expo) 모바일 앱으로 보여주는 시스템입니다. **영상 수집/재생/타임스탬프 이동 기능은 없습니다** — 태그를 탭하면 회의록 원문 화면으로 이동합니다.
 
 ## 문서 지도
 
+- [docs/rubric/CLAUDE.md](docs/rubric/CLAUDE.md) — 8축 의정활동 실적평가 루브릭 (최상위 채점 기준·가중치·에이전트 역할·출력 포맷). 채점 로직을 다룰 때는 이 문서를 먼저 읽는다.
 - [Design.md](Design.md) — 제품 설계 개요 (무엇을, 왜)
 - [agent.md](agent.md) — Sonnet 5 / Opus 5 두 AI 에이전트의 역할, 입출력 계약, 프롬프트/루브릭
 - [harness.md](harness.md) — 스크래퍼 + AI 파이프라인 실행 방법, 환경변수, 재시도/멱등성 규칙
@@ -46,10 +47,10 @@ cd mobile && npx expo start               # 앱 로컬 실행 (Expo Go/시뮬레
 
 - 대상 범위는 **제10대**만. 5분자유발언(`/kr/cast/free.do`)은 절대 수집/처리하지 않는다.
 - **영상 기능 전면 금지.** 영상 URL 수집, 타임코드, 플레이어 임베드, 딥링크 — 어떤 형태로도 추가하지 않는다. (v1에서 있었으나 v2에서 완전히 폐기됨)
-- 모델 역할은 고정: 요약/태그 생성 = `anthropic/claude-sonnet-5`, 5개 인사이트 점수 = `anthropic/claude-opus-5`. 이 둘을 바꿔 쓰지 않는다.
+- 모델 역할은 고정: 요약/태그 생성 = `anthropic/claude-sonnet-5`, 8개 인사이트 점수(가중평균) = `anthropic/claude-opus-5`. 이 둘을 바꿔 쓰지 않는다.
 - 모든 Anthropic 호출은 **Vercel AI Gateway**를 통해서만 (plain `"provider/model"` 문자열). 직접 `@ai-sdk/anthropic`이나 raw `ANTHROPIC_API_KEY` 사용 금지.
 - 게이트웨이 인증은 기본적으로 **OIDC** (`vercel env pull`이 발급하는 `VERCEL_OIDC_TOKEN`). 수동 `AI_GATEWAY_API_KEY` 발급은 OIDC를 쓸 수 없을 때만.
-- 평점 척도는 5개 항목 모두 정수 1~5.
+- 평점 척도는 8개 축 모두 정수 1~5 (단, 창의성은 예산·결산 심의 발언유형에서, 지속성은 이전 회기 인용 근거가 없는 경우 `null`이 될 수 있다 — `docs/rubric/CLAUDE.md` §3·§4 참조). 최종 점수는 축별 단순평균이 아닌 발언유형별 가중평균이다.
 - DB는 Postgres (Vercel Marketplace/Neon), `@neondatabase/serverless` + `drizzle-orm/neon-http`, 환경변수 `DATABASE_URL`.
 - 스크래핑은 요청 사이 1~2초 지연, robots.txt 준수. 병렬로 몰아서 요청하지 않는다.
 - 파이프라인은 재실행해도 안전해야 한다 (이미 처리된 `statementId`는 건너뜀).
