@@ -10,7 +10,7 @@ export const maxDuration = 300;
 // whatever it fetches into the public-facing statements/meetings tables. The route is gated
 // only by a shared PIN, so the URL must additionally be pinned to the council site's origin
 // — otherwise a PIN holder could aim the server's browser at an arbitrary internal or
-// external host (SSRF). This is the same origin scripts/scrape/session.ts navigates to.
+// external host (SSRF). This is the same origin scripts/scrape/meetingList.ts navigates to.
 const COUNCIL_ORIGIN = "https://www.gjcl.go.kr";
 
 function isCouncilOrigin(value: string): boolean {

@@ -8,9 +8,11 @@ import { meetings } from "@/db/schema";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// Safety cap. late.do is newest-first, so a page with zero unseen 제10대 rows means every
-// later page is also fully known/older-generation — confirmed live that 제10대 rows run out
-// well before page 10, so 50 is a generous ceiling against a 300s budget, not an expected case.
+// Safety cap. late.do is ordered by meeting date, not publication time, so a meeting can be
+// published (and land in the listing) long after its date — an already-known-looking page must
+// not stop the scan (see scrapeLateDoPage's own generation filter for the real termination
+// signal: zero 제10대 rows). Confirmed live that 제10대 rows run out well before page 10, so 50
+// is a generous ceiling against a 300s budget, not an expected case.
 const MAX_PAGES_PER_CHECK = 50;
 
 export async function POST(request: NextRequest) {
@@ -30,10 +32,6 @@ export async function POST(request: NextRequest) {
 
       const unseen = rows.filter((m) => !existingIds.has(m.sourceMeetingId));
       newMeetings.push(...unseen);
-
-      // Newest-first ordering: if every row on this page is already known, every row on
-      // every subsequent page is even older and also already known.
-      if (unseen.length === 0) break;
     }
   } finally {
     await browser.close();

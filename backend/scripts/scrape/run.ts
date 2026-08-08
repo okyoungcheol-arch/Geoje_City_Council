@@ -7,15 +7,22 @@ async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// This is a one-time/occasional full-backfill script, so an unbounded loop is more
+// defensible here than in the on-demand check-new-meetings API route, and it terminates
+// correctly in practice (the generation filter empties out once 제10대 rows are exhausted).
+// Still, keep a generous ceiling as cheap insurance against an unexpected site-behavior
+// change (e.g. pagination looping) causing a runaway scrape.
+const MAX_PAGES = 200;
+
 async function run() {
   const browser = await launchChromium();
-  const page = await browser.newPage();
   const failures: { title: string; sourceUrl: string; error: string }[] = [];
   let pageNo = 1;
   let totalMeetings = 0;
 
   try {
-    while (true) {
+    const page = await browser.newPage();
+    while (pageNo <= MAX_PAGES) {
       await sleep(1500); // polite delay before each late.do page request
       const rows = await scrapeLateDoPage(page, pageNo);
       if (rows.length === 0) break; // no more 제10대 rows on this page or beyond
@@ -40,6 +47,10 @@ async function run() {
     }
   } finally {
     await browser.close();
+  }
+
+  if (pageNo > MAX_PAGES) {
+    console.warn(`WARNING: hit MAX_PAGES safety ceiling (${MAX_PAGES}) — the scrape may have been cut off early.`);
   }
 
   console.log(`\nDone. ${totalMeetings} meeting(s) processed across ${pageNo - 1} page(s). ${failures.length} failed.`);

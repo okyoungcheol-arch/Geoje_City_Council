@@ -39,7 +39,7 @@ npx dotenv -e .env.local -- npx tsx scripts/pipeline/run.ts
 
 ## 운영 시 체크리스트
 
-1. `scripts/scrape/run.ts`를 먼저 late.do 1페이지만 시험 실행(page=1)해 결과를 확인 → drizzle-kit studio로 검수, 문제없으면 전체 페이지로 재실행
+1. `scripts/scrape/run.ts`를 실행해 콘솔에 1페이지분 결과가 정상적으로 찍히는 것을 확인하면 Ctrl-C로 중단 → drizzle-kit studio로 검수, 문제없으면 다시 실행해 전체 페이지를 끝까지 처리
 3. `scripts/pipeline/run.ts`를 `.limit(10)`으로 좁혀 시험 실행 → 채점 결과를 사람이 눈으로 검수 (루브릭이 원문과 맞는지)
 4. 문제없으면 전체 배치 실행
 5. 실패 목록이 있으면 원인을 확인하고 (사이트 구조 변경? Gateway 오류?) 재실행 — 이미 처리된 항목은 자동으로 건너뛴다

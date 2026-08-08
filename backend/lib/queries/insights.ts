@@ -70,8 +70,8 @@ export async function getInsightRows(): Promise<InsightRow[]> {
 
     // 부의된 안건(formally-tabled agenda item) 게이트: CLAUDE.md §1.1 "부의된 안건이 있는
     // 회의만 평가". 회의가 agendaItems 0건이면 부의된 안건이 없는 것과 동치다 —
-    // upsertMeeting.ts가 5분자유발언을 제외한 실제 안건만 agendaItems로 적재하기 때문에
-    // (minutes.ts의 5분자유발언 섹션 전체 드롭 로직 참조), 별도 HTML 파싱이 필요 없다.
+    // upsertMeeting.ts는 minutes.ts가 5분자유발언 발언을 걷어낸 뒤 살아남은 발언들로부터
+    // agendaItems를 파생시키므로(별도의 "안건 목록" 직접 읽기가 아님), 별도 HTML 파싱이 필요 없다.
     // JOIN이 아니라 별도 쿼리로 병렬 실행하는 이유: agendaItems는 회의당 1:N이라, meetings에
     // 직접 JOIN하면 위 statementInsights 기본 행이 안건 개수만큼 중복된다.
     db.selectDistinct({ meetingId: agendaItems.meetingId }).from(agendaItems),
@@ -96,19 +96,19 @@ export async function getInsightRows(): Promise<InsightRow[]> {
     rationale: r.rationale!,
   }));
 
-  const membersByMeeting = new Map<string, Set<string>>();
+  const membersByMeetingId = new Map<number, Set<string>>();
   for (const r of normalized) {
-    const set = membersByMeeting.get(r.meetingTitle) ?? new Set<string>();
+    const set = membersByMeetingId.get(r.meetingId) ?? new Set<string>();
     set.add(r.memberName);
-    membersByMeeting.set(r.meetingTitle, set);
+    membersByMeetingId.set(r.meetingId, set);
   }
-  const qualifyingMeetingTitles = new Set(
-    [...membersByMeeting.entries()]
+  const qualifyingMeetingIds = new Set(
+    [...membersByMeetingId.entries()]
       .filter(([, memberSet]) => memberSet.size >= MIN_SUBSTANTIVE_MEMBERS_PER_MEETING)
-      .map(([title]) => title)
+      .map(([meetingId]) => meetingId)
   );
 
   return normalized.filter(
-    (r) => qualifyingMeetingTitles.has(r.meetingTitle) && meetingIdsWithAgendaItems.has(r.meetingId)
+    (r) => qualifyingMeetingIds.has(r.meetingId) && meetingIdsWithAgendaItems.has(r.meetingId)
   );
 }
