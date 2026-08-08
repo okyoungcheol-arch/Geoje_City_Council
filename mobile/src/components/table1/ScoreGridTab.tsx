@@ -1,7 +1,7 @@
 // mobile/src/components/table1/ScoreGridTab.tsx
 import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
-import type { InsightRow } from "@/lib/api";
+import { groupByMemberMeeting, type InsightRow } from "@/lib/api";
 import { AXES, AXIS_LABELS, axisCellLabel } from "@/lib/axes";
 import { colors, typography, spacing } from "@/theme/tokens";
 
@@ -13,7 +13,9 @@ const SCORE_COLUMN_WIDTH = 64;
 const DISPLAY_AXES = AXES.filter((axis) => axis !== "persistence");
 
 export function ScoreGridTab({ rows, footnote }: { rows: InsightRow[]; footnote: string }) {
-  const sorted = [...rows].sort((a, b) => b.weightedScore - a.weightedScore);
+  const groups = groupByMemberMeeting(rows).sort(
+    (a, b) => b.representative.weightedScore - a.representative.weightedScore
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -22,13 +24,13 @@ export function ScoreGridTab({ rows, footnote }: { rows: InsightRow[]; footnote:
           <View style={[styles.cell, styles.headerCell, styles.memberCell]}>
             <Text style={styles.headerLabel}>의원</Text>
           </View>
-          {sorted.map((row) => (
+          {groups.map((group) => (
             <Pressable
-              key={row.statementId}
+              key={group.representative.statementId}
               style={[styles.cell, styles.memberCell]}
-              onPress={() => router.push(`/statement/${row.statementId}`)}
+              onPress={() => router.push(`/statement/${group.representative.statementId}`)}
             >
-              <Text style={styles.memberLabel}>{row.memberName}</Text>
+              <Text style={styles.memberLabel}>{group.representative.memberName}</Text>
             </Pressable>
           ))}
         </View>
@@ -42,11 +44,13 @@ export function ScoreGridTab({ rows, footnote }: { rows: InsightRow[]; footnote:
                 </View>
               ))}
             </View>
-            {sorted.map((row) => (
-              <View key={row.statementId} style={styles.dataRow}>
+            {groups.map((group) => (
+              <View key={group.representative.statementId} style={styles.dataRow}>
                 {DISPLAY_AXES.map((axis) => (
                   <View key={axis} style={[styles.cell, styles.scoreCell]}>
-                    <Text style={styles.scoreLabel}>{axisCellLabel(row[axis], axis, row.persistenceStatus)}</Text>
+                    <Text style={styles.scoreLabel}>
+                      {axisCellLabel(group.representative[axis], axis, group.representative.persistenceStatus)}
+                    </Text>
                   </View>
                 ))}
               </View>

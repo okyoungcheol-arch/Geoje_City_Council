@@ -1,17 +1,21 @@
 // mobile/src/app/statement/[id].tsx
 import { useEffect, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
-import { ScrollView, Text, View, ActivityIndicator, StyleSheet } from "react-native";
-import { fetchInsightById, type InsightRow } from "@/lib/api";
+import { useLocalSearchParams, router } from "expo-router";
+import { ScrollView, Text, View, ActivityIndicator, StyleSheet, Pressable } from "react-native";
+import { fetchInsightWithSiblings, type InsightRow } from "@/lib/api";
 import { AXES, AXIS_LABELS, axisCellLabel } from "@/lib/axes";
 import { colors, typography, spacing, radius } from "@/theme/tokens";
 
 export default function StatementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [row, setRow] = useState<InsightRow | null | undefined>(undefined);
+  const [siblings, setSiblings] = useState<InsightRow[]>([]);
 
   useEffect(() => {
-    fetchInsightById(Number(id)).then(setRow);
+    fetchInsightWithSiblings(Number(id)).then((result) => {
+      setRow(result?.row ?? null);
+      setSiblings(result?.siblings ?? []);
+    });
   }, [id]);
 
   if (row === undefined) {
@@ -65,6 +69,20 @@ export default function StatementDetailScreen() {
       <Text style={styles.body}>{row.rawText}</Text>
       <Text style={styles.sectionTitle}>AI 채점 근거</Text>
       <Text style={styles.body}>{row.rationale}</Text>
+
+      {siblings.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>이 회의의 다른 발언 {siblings.length}건</Text>
+          {siblings.map((s) => (
+            <Pressable key={s.statementId} style={styles.siblingCard} onPress={() => router.push(`/statement/${s.statementId}`)}>
+              <View style={styles.siblingHeaderRow}>
+                <Text style={styles.siblingScore}>{s.weightedScore.toFixed(2)}</Text>
+                <Text style={styles.siblingTopic}>{s.tags[0] ?? s.summary.slice(0, 24)}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -95,4 +113,13 @@ const styles = StyleSheet.create({
   scoreGridValue: { ...typography.label1, color: colors.label.normal, marginTop: spacing[2] },
   sectionTitle: { ...typography.label1, color: colors.label.normal, marginTop: spacing[12], marginBottom: spacing[4] },
   body: { ...typography.body2, color: colors.label.neutral },
+  siblingCard: {
+    padding: spacing[10],
+    borderRadius: radius[8],
+    backgroundColor: colors.background.alternative,
+    marginBottom: spacing[6],
+  },
+  siblingHeaderRow: { flexDirection: "row", alignItems: "center", gap: spacing[8] },
+  siblingScore: { ...typography.label1, color: colors.primary.normal },
+  siblingTopic: { ...typography.body2, color: colors.label.neutral, flexShrink: 1 },
 });

@@ -43,3 +43,49 @@ export async function fetchInsightById(id: number): Promise<InsightRow | null> {
   const rows = await fetchInsights();
   return rows.find((r) => r.statementId === id) ?? null;
 }
+
+export interface InsightGroup {
+  /** 이 회의에서 해당 의원의 발언 중 가중평균이 가장 높은 대표 발언. */
+  representative: InsightRow;
+  /** 같은 회의·같은 의원의 나머지 발언(대표 제외), 가중평균 내림차순. */
+  siblings: InsightRow[];
+}
+
+/**
+ * 한 의원이 한 회의에서 여러 건의 유효 발언을 했을 때(예: 위원회 배정을 놓고 의장과
+ * 여러 차례 주고받은 실랑이 중 실질 내용이 담긴 발언만 개별 채점된 경우), 표1에는
+ * 회의당 의원 1행만 노출하기 위한 그룹화. 가중평균이 가장 높은 발언을 대표로 삼는다 —
+ * 나머지 발언은 버리지 않고 표2 상세에서 "이 회의의 다른 발언"으로 계속 보여준다.
+ */
+export function groupByMemberMeeting(rows: InsightRow[]): InsightGroup[] {
+  const byKey = new Map<string, InsightRow[]>();
+  for (const row of rows) {
+    const key = `${row.meetingTitle}::${row.memberName}`;
+    const list = byKey.get(key) ?? [];
+    list.push(row);
+    byKey.set(key, list);
+  }
+
+  return [...byKey.values()].map((group) => {
+    const sorted = [...group].sort((a, b) => b.weightedScore - a.weightedScore);
+    return { representative: sorted[0], siblings: sorted.slice(1) };
+  });
+}
+
+/**
+ * 표2 상세 화면용: 대상 발언과, 같은 회의·같은 의원의 다른 발언들(가중평균 내림차순)을
+ * 함께 반환한다. 이미 fetchInsights()로 받아온 배열에서 파생하므로 API를 새로 호출하지 않는다.
+ */
+export async function fetchInsightWithSiblings(
+  id: number
+): Promise<{ row: InsightRow; siblings: InsightRow[] } | null> {
+  const rows = await fetchInsights();
+  const row = rows.find((r) => r.statementId === id);
+  if (!row) return null;
+
+  const siblings = rows
+    .filter((r) => r.statementId !== id && r.meetingTitle === row.meetingTitle && r.memberName === row.memberName)
+    .sort((a, b) => b.weightedScore - a.weightedScore);
+
+  return { row, siblings };
+}

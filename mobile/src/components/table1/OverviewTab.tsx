@@ -1,33 +1,43 @@
 // mobile/src/components/table1/OverviewTab.tsx
 import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { router } from "expo-router";
-import type { InsightRow } from "@/lib/api";
+import { groupByMemberMeeting, type InsightRow } from "@/lib/api";
 import { colors, typography, spacing, radius } from "@/theme/tokens";
 
 export function OverviewTab({ rows }: { rows: InsightRow[] }) {
-  const sorted = [...rows].sort((a, b) => b.weightedScore - a.weightedScore);
+  const groups = groupByMemberMeeting(rows).sort(
+    (a, b) => b.representative.weightedScore - a.representative.weightedScore
+  );
 
   return (
     <FlatList
       contentContainerStyle={styles.list}
-      data={sorted}
-      keyExtractor={(row) => String(row.statementId)}
-      renderItem={({ item }) => (
-        <Pressable style={styles.card} onPress={() => router.push(`/statement/${item.statementId}`)}>
-          <View style={styles.headerRow}>
-            <Text style={styles.member}>{item.memberName}</Text>
-            <Text style={styles.weightedScore}>{item.weightedScore.toFixed(2)}</Text>
-          </View>
-          <Text style={styles.topic}>{item.tags[0] ?? item.summary.slice(0, 24)}</Text>
-          <View style={styles.tagRow}>
-            {item.tags.map((tag) => (
-              <View key={tag} style={styles.tagChip}>
-                <Text style={styles.tagLabel}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-        </Pressable>
-      )}
+      data={groups}
+      keyExtractor={(group) => String(group.representative.statementId)}
+      renderItem={({ item }) => {
+        const row = item.representative;
+        return (
+          <Pressable style={styles.card} onPress={() => router.push(`/statement/${row.statementId}`)}>
+            <View style={styles.headerRow}>
+              <Text style={styles.member}>{row.memberName}</Text>
+              <Text style={styles.weightedScore}>{row.weightedScore.toFixed(2)}</Text>
+            </View>
+            <Text style={styles.topic}>{row.tags[0] ?? row.summary.slice(0, 24)}</Text>
+            <View style={styles.tagRow}>
+              {row.tags.map((tag) => (
+                <View key={tag} style={styles.tagChip}>
+                  <Text style={styles.tagLabel}>{tag}</Text>
+                </View>
+              ))}
+              {item.siblings.length > 0 && (
+                <View style={styles.siblingChip}>
+                  <Text style={styles.siblingLabel}>이 회의 발언 {item.siblings.length + 1}건</Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
+        );
+      }}
     />
   );
 }
@@ -56,4 +66,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing[6],
   },
   tagLabel: { ...typography.caption1, color: colors.primary.normal },
+  siblingChip: {
+    borderWidth: 1,
+    borderColor: colors.line.solid,
+    borderRadius: radius[16],
+    paddingHorizontal: spacing[10],
+    paddingVertical: spacing[4],
+    marginRight: spacing[6],
+    marginBottom: spacing[6],
+  },
+  siblingLabel: { ...typography.caption1, color: colors.label.alternative },
 });
