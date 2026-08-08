@@ -2,7 +2,7 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { groupByMemberMeeting, type InsightRow } from "@/lib/api";
-import { AXES, AXIS_LABELS, axisCellLabel } from "@/lib/axes";
+import { AXES, AXIS_LABELS, axisCellLabel, meetingSessionTitle } from "@/lib/axes";
 import { colors, typography, spacing } from "@/theme/tokens";
 
 const ROW_HEIGHT = 44;
@@ -21,16 +21,28 @@ export function ScoreGridTab({ rows, footnote }: { rows: InsightRow[]; footnote:
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.tableRow}>
         <View style={styles.stickyColumn}>
-          <View style={[styles.cell, styles.headerCell, styles.memberCell]}>
-            <Text style={styles.headerLabel}>의원</Text>
+          <View style={styles.dataRow}>
+            <View style={[styles.cell, styles.headerCell, styles.memberCell]}>
+              <Text style={styles.headerLabel}>의원</Text>
+            </View>
+            <View style={[styles.cell, styles.headerCell, styles.meetingCell]}>
+              <Text style={styles.headerLabel}>회의</Text>
+            </View>
           </View>
           {groups.map((group) => (
             <Pressable
               key={group.representative.statementId}
-              style={[styles.cell, styles.memberCell]}
+              style={styles.dataRow}
               onPress={() => router.push(`/statement/${group.representative.statementId}`)}
             >
-              <Text style={styles.memberLabel}>{group.representative.memberName}</Text>
+              <View style={[styles.cell, styles.memberCell]}>
+                <Text style={styles.memberLabel}>{group.representative.memberName}</Text>
+              </View>
+              <View style={[styles.cell, styles.meetingCell]}>
+                <Text style={styles.meetingLabel} numberOfLines={1}>
+                  {meetingSessionTitle(group.representative.meetingTitle)}
+                </Text>
+              </View>
             </Pressable>
           ))}
         </View>
@@ -84,9 +96,11 @@ const styles = StyleSheet.create({
   },
   headerCell: { backgroundColor: colors.background.alternative },
   memberCell: { width: 88, alignItems: "flex-start" },
+  meetingCell: { width: 132, alignItems: "flex-start" },
   scoreCell: { width: SCORE_COLUMN_WIDTH },
   headerLabel: { ...typography.label2, color: colors.label.alternative },
   memberLabel: { ...typography.label1, color: colors.primary.normal },
+  meetingLabel: { ...typography.caption1, color: colors.label.neutral },
   scoreLabel: { ...typography.body2, color: colors.label.normal },
   footnote: { ...typography.caption2, color: colors.label.alternative, marginTop: spacing[12] },
 });

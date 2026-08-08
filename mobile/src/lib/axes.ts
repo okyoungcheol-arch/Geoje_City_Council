@@ -115,3 +115,14 @@ export function axisCellLabel(value: number | null, axis: Axis, persistenceStatu
 export function meetingShortTitle(fullTitle: string): string {
   return fullTitle.split("\n")[0].trim();
 }
+
+/**
+ * "거제시의회 제10대  제263회[임시회] 본회의 제2차 회의록" → "제263회[임시회] 본회의"처럼
+ * "거제시의회 제10대" 접두사와 "제N차 회의록" 접미사를 뺀, 세부항목 표의 회의 열에 쓸 짧은 표기.
+ * 패턴에 안 맞는 제목(방어적)은 meetingShortTitle과 동일하게 첫 줄 그대로 반환한다.
+ */
+export function meetingSessionTitle(fullTitle: string): string {
+  const firstLine = meetingShortTitle(fullTitle);
+  const match = firstLine.match(/^거제시의회\s*제10대\s*(.+?)\s*제\d+차\s*회의록\s*$/);
+  return match ? match[1].trim() : firstLine;
+}
