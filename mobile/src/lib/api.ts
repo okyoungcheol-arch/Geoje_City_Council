@@ -4,11 +4,18 @@ export interface InsightRow {
   meetingTitle: string;
   memberName: string;
   tags: string[];
-  learningLevel: number;
-  questionScore: number;
-  ideaScore: number;
-  feasibilityScore: number;
-  geojeImpactScore: number;
+  topicsToWatch: string[];
+  speechType: string;
+  creativity: number | null;
+  feasibility: number;
+  evidenceLegal: number;
+  persistence: number | null;
+  persistenceStatus: string;
+  oversight: number;
+  citizenBenefit: number;
+  futureStrategy: number;
+  cityDevelopment: number;
+  weightedScore: number;
   summary: string;
   rawText: string;
   rationale: string;
@@ -17,7 +24,7 @@ export interface InsightRow {
 export interface InsightFilters {
   member?: string;
   meeting?: string;
-  minGeojeImpact?: number;
+  minWeightedScore?: number;
 }
 
 export async function fetchInsights(filters: InsightFilters = {}): Promise<InsightRow[]> {
@@ -25,7 +32,7 @@ export async function fetchInsights(filters: InsightFilters = {}): Promise<Insig
   const params = new URLSearchParams();
   if (filters.member) params.set("member", filters.member);
   if (filters.meeting) params.set("meeting", filters.meeting);
-  if (filters.minGeojeImpact) params.set("minGeojeImpact", String(filters.minGeojeImpact));
+  if (filters.minWeightedScore) params.set("minWeightedScore", String(filters.minWeightedScore));
 
   const res = await fetch(`${base}/api/insights?${params.toString()}`);
   if (!res.ok) throw new Error(`Failed to fetch insights: ${res.status}`);
