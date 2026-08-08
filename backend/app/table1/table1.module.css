@@ -1,0 +1,229 @@
+.screen {
+  min-height: 100vh;
+  background: #f7f7f8;
+  color: #171719;
+  font-family: -apple-system, "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  padding: 20px 16px 40px;
+}
+
+.header h1 {
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+
+.disclaimer {
+  color: #ff9200;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.meetingSelect {
+  width: 100%;
+  max-width: 480px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #eaebec;
+  font-size: 14px;
+  background: #fff;
+}
+
+.tabbar {
+  display: flex;
+  gap: 4px;
+  margin: 16px 0 12px;
+  background: rgba(112, 115, 124, 0.08);
+  border-radius: 8px;
+  padding: 4px;
+  max-width: 320px;
+}
+
+.tabButton {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(55, 56, 60, 0.61);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tabButtonActive {
+  background: #fff;
+  color: #0066ff;
+}
+
+.overviewCard {
+  background: #fff;
+  border: 1px solid #eaebec;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.overviewCard:hover {
+  border-color: #0066ff;
+}
+
+.overviewCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.overviewMember {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.overviewScore {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0066ff;
+}
+
+.overviewTopic {
+  color: rgba(46, 47, 51, 0.88);
+  font-size: 14px;
+  margin: 4px 0 8px;
+}
+
+.tagChip {
+  display: inline-block;
+  background: rgba(112, 115, 124, 0.08);
+  color: #0066ff;
+  border-radius: 16px;
+  padding: 3px 10px;
+  font-size: 12px;
+  margin: 0 6px 6px 0;
+}
+
+.scoreTableWrap {
+  overflow-x: auto;
+  border: 1px solid #eaebec;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.scoreTable {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.scoreTable th,
+.scoreTable td {
+  padding: 10px 12px;
+  text-align: center;
+  white-space: nowrap;
+  border-bottom: 1px solid #eaebec;
+  font-size: 13px;
+}
+
+.scoreTable thead th {
+  background: #f7f7f8;
+  color: rgba(55, 56, 60, 0.61);
+  font-weight: 600;
+}
+
+.memberCell {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  text-align: left !important;
+  font-weight: 600;
+  color: #0066ff;
+  cursor: pointer;
+  border-right: 1px solid #eaebec;
+}
+
+thead .memberCell {
+  background: #f7f7f8;
+  color: rgba(55, 56, 60, 0.61);
+}
+
+.pendingBadge {
+  display: inline-block;
+  background: rgba(112, 115, 124, 0.08);
+  color: rgba(55, 56, 60, 0.61);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.footnote {
+  color: rgba(55, 56, 60, 0.61);
+  font-size: 12px;
+  margin-top: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  font-family: inherit;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal {
+  background: #fff;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 16px 16px 0 0;
+  padding: 24px 20px;
+  position: relative;
+}
+
+.modalClose {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  line-height: 1;
+  color: rgba(55, 56, 60, 0.61);
+  cursor: pointer;
+}
+
+.modal h2 {
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+
+.scoreBadge {
+  display: inline-block;
+  background: rgba(112, 115, 124, 0.08);
+  color: #0066ff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.modal section {
+  margin-top: 16px;
+}
+
+.modal section h3 {
+  font-size: 13px;
+  color: rgba(55, 56, 60, 0.61);
+  margin: 0 0 4px;
+}
+
+.modal section p {
+  font-size: 15px;
+  color: #171719;
+  line-height: 1.5;
+  margin: 2px 0;
+}
