@@ -41,8 +41,10 @@ const fixture = [
   makeRow({ statementId: 8, meetingId: 3, meetingTitle: "회의 C", memberName: "김영규" }),
 ];
 
-// meetingId 1에만 agendaItems가 있음 (회의 C=3은 없음 — 개회식류 시나리오)
-const agendaItemMeetingIds = [{ meetingId: 1 }];
+// meetingId 1, 2에는 agendaItems가 있음. meetingId 2(회의 B)도 안건은 있지만 3명 미만이라
+// 여전히 제외돼야 하므로, 두 게이트가 서로 독립적으로 동작함을 증명한다.
+// meetingId 3(회의 C)은 agendaItems가 0건(개회식류 시나리오).
+const agendaItemMeetingIds = [{ meetingId: 1 }, { meetingId: 2 }];
 
 vi.mock("@/db/client", () => ({
   db: {
@@ -67,9 +69,14 @@ test("a meeting with 3+ members and at least one agenda item is included", async
   const rows = await getInsightRows();
   const meetingA = rows.filter((r) => r.meetingTitle === "회의 A");
   expect(meetingA).toHaveLength(3);
+  // 정규화된 이름이 실제로 출력에 반영되는지도 확인한다 — 카운트만으로는
+  // normalizeMemberName이 제대로 연결돼 있는지 증명하지 못한다.
+  expect(meetingA.map((r) => r.memberName).sort()).toEqual(["김영규", "임수환", "홍길동"]);
 });
 
 test("a meeting under the 3-member threshold is excluded regardless of agenda items", async () => {
+  // 회의 B(meetingId 2)는 agendaItemMeetingIds에도 포함돼 있어 안건 게이트는 통과한다 —
+  // 그럼에도 제외된다는 것은 3명 미만 게이트가 안건 게이트와 독립적으로 동작함을 증명한다.
   const rows = await getInsightRows();
   expect(rows.some((r) => r.meetingTitle === "회의 B")).toBe(false);
 });
