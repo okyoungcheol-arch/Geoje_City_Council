@@ -1,25 +1,6 @@
 // backend/scripts/scrape/meetingList.ts
-import type { CouncilSession } from "./session";
-import { postAsync } from "./session";
-
-export interface CouncilCategory {
-  cmtCd: string;
-  label: string;
-}
-
-interface CommitteeRootRow {
-  text: string;
-  data: { cl_cd: string; cmt_cd: string };
-}
-interface SessionRow {
-  text: string;
-  data: { cl_cd: string; cmt_cd: string; th: number; session: number };
-}
-interface MinutesRow {
-  text: string;
-  a_attr: { title: string };
-  data: { uid: number; publish: string };
-}
+import type { Page } from "playwright-core";
+import * as cheerio from "cheerio";
 
 export interface ScrapedMeeting {
   sourceMeetingId: string;
@@ -31,62 +12,75 @@ export interface ScrapedMeeting {
   sourceUrl: string;
 }
 
-async function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
+const TARGET_GENERATION = "제10대";
+
+function buildLateDoUrl(pageNo: number): string {
+  const url = new URL("https://www.gjcl.go.kr/kr/minutes/late.do");
+  url.searchParams.set("schwrd", "");
+  url.searchParams.set("flag", "all");
+  url.searchParams.set("mem_sch", "");
+  url.searchParams.set("th_sch", "10");
+  url.searchParams.set("page", String(pageNo));
+  url.searchParams.set("list_style", "");
+  url.searchParams.set("cmt_cd_sch", "");
+  return url.toString();
 }
 
-// "제264회 [임시회] (2026. 07. 20. ~ 2026. 07. 31.)" -> "제264회"
-export function parseSessionRound(label: string): string {
-  const match = label.match(/^(제\d+회)/);
-  return match ? match[1] : label;
+function parseDate(text: string): string | null {
+  const m = text.match(/^(\d{4})\.(\d{2})\.(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
 }
 
-// "[임시회의록] 제1차(2026.07.20.월요일)" -> { sessionNo: "제1차", meetingDate: "2026-07-20" }
-export function parseDocumentLabel(label: string): { sessionNo: string; meetingDate: string | null } {
-  const noMatch = label.match(/(제\d+차|개회식)/);
-  const sessionNo = noMatch ? noMatch[1] : label;
-  const dateMatch = label.match(/(\d{4})[.\s]+(\d{2})[.\s]+(\d{2})/);
-  const meetingDate = dateMatch ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}` : null;
-  return { sessionNo, meetingDate };
-}
+// Pure function: HTML -> ScrapedMeeting[], filtered to TARGET_GENERATION only. The site's
+// th_sch=10 query param is NOT reliable past the first few pages (confirmed live: page 1 is
+// all 제10대, but page 5+ silently returns 제9대/제8대/제1대 rows even with th_sch=10 still in
+// the URL — the site's total page count, 444, is a fixed all-generation figure unrelated to
+// the filter). This function is the real generation gate. An empty return means "no 제10대
+// rows on this page" — callers use that as the pagination-loop termination signal. This is
+// safe even on a transition page where 제10대 and older rows are mixed: only the non-matching
+// rows on that page are dropped, and the next page will be fully non-matching, terminating
+// the loop there.
+export function parseLateDoHtml(html: string): ScrapedMeeting[] {
+  const $ = cheerio.load(html);
+  const meetings: ScrapedMeeting[] = [];
 
-export async function scrapeCategories(session: CouncilSession): Promise<CouncilCategory[]> {
-  const rows = await postAsync<CommitteeRootRow[]>(session, "committeeRoot.do", { cl_cd: "CT" });
-  return rows.map((r) => ({ cmtCd: r.data.cmt_cd, label: r.text }));
-}
+  $("table.normal_list tbody tr").each((_, el) => {
+    const $cells = $(el).find("td");
+    if ($cells.length < 6) return; // defensive: skip malformed rows
 
-export async function scrapeMeetingList(session: CouncilSession, category: CouncilCategory): Promise<ScrapedMeeting[]> {
-  const sessionRows = await postAsync<SessionRow[]>(session, "session.do", {
-    cl_cd: "CT",
-    th: 10,
-    cmt_cd: category.cmtCd,
+    const generation = $($cells[1]).text().trim();
+    if (generation !== TARGET_GENERATION) return;
+
+    const $link = $($cells[4]).find("a").first();
+    const href = $link.attr("href") ?? "";
+    const uidMatch = href.match(/uid=(\d+)/);
+    if (!uidMatch) return; // defensive: skip rows with no viewer link
+
+    const title = $link.attr("title")?.trim() || "";
+    const category = $link.contents().first().text().trim();
+    const sessionRound = $($cells[2]).text().trim();
+    const sessionNo = $($cells[3]).text().trim();
+    const meetingDate = parseDate($($cells[5]).text().trim());
+
+    meetings.push({
+      sourceMeetingId: uidMatch[1],
+      category,
+      title,
+      sessionRound,
+      sessionNo,
+      meetingDate,
+      sourceUrl: `https://www.gjcl.go.kr/viewer/minutes.do?uid=${uidMatch[1]}`,
+    });
   });
 
-  const meetings: ScrapedMeeting[] = [];
-  for (const sessionRow of sessionRows) {
-    await sleep(1500); // polite delay between the tree API's own child requests
-
-    const documentRows = await postAsync<MinutesRow[]>(session, "minutes.do", {
-      cl_cd: "CT",
-      th: 10,
-      session: sessionRow.data.session,
-      cmt_cd: category.cmtCd,
-    });
-
-    for (const doc of documentRows) {
-      if (doc.data.publish !== "T") continue; // skip unpublished/provisional-only placeholders
-
-      const { sessionNo, meetingDate } = parseDocumentLabel(doc.text);
-      meetings.push({
-        sourceMeetingId: String(doc.data.uid),
-        category: category.label,
-        title: doc.a_attr.title,
-        sessionRound: parseSessionRound(sessionRow.text),
-        sessionNo,
-        meetingDate,
-        sourceUrl: `https://www.gjcl.go.kr/viewer/minutes.do?uid=${doc.data.uid}`,
-      });
-    }
-  }
   return meetings;
+}
+
+// Fetches one late.do page via an already-open Playwright Page (caller owns browser
+// lifecycle — see run.ts / check-new-meetings/route.ts). No CSRF/session needed: late.do is
+// a plain server-rendered GET, confirmed via live fetch.
+export async function scrapeLateDoPage(page: Page, pageNo: number): Promise<ScrapedMeeting[]> {
+  await page.goto(buildLateDoUrl(pageNo));
+  const html = await page.content();
+  return parseLateDoHtml(html);
 }
