@@ -15,5 +15,7 @@ export async function GET(request: NextRequest) {
       r.weightedScore >= minWeightedScore
   );
 
-  return NextResponse.json(filtered);
+  return NextResponse.json(filtered, {
+    headers: { "Access-Control-Allow-Origin": "*" },
+  });
 }

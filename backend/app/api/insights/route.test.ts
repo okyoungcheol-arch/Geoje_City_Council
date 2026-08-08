@@ -82,3 +82,8 @@ test("combining member and minWeightedScore narrows to the intersection", async 
   expect(body).toHaveLength(1);
   expect(body[0].statementId).toBe(3);
 });
+
+test("response allows cross-origin requests so the web build can fetch it", async () => {
+  const res = await GET(new NextRequest("http://localhost:3000/api/insights"));
+  expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
+});
