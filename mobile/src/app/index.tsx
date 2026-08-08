@@ -6,20 +6,26 @@ import { fetchInsights, type InsightRow } from "@/lib/api";
 import { InsightFilters } from "@/components/InsightFilters";
 import { OverviewTab } from "@/components/table1/OverviewTab";
 import { ScoreGridTab } from "@/components/table1/ScoreGridTab";
-import { weightFootnote, type SpeechType } from "@/lib/axes";
+import { weightFootnote, meetingShortTitle, type SpeechType } from "@/lib/axes";
 import { colors, spacing, typography, radius } from "@/theme/tokens";
 
 type Tab = "overview" | "scores";
 
 export default function IndexScreen() {
   const [rows, setRows] = useState<InsightRow[] | null>(null);
+  const [fetchFailed, setFetchFailed] = useState(false);
   const [memberFilter, setMemberFilter] = useState("");
   const [meetingFilter, setMeetingFilter] = useState("");
   const [minWeightedScore, setMinWeightedScore] = useState(1);
   const [tab, setTab] = useState<Tab>("overview");
 
   useEffect(() => {
-    fetchInsights().then(setRows).catch(() => setRows([]));
+    fetchInsights()
+      .then(setRows)
+      .catch(() => {
+        setRows([]);
+        setFetchFailed(true);
+      });
   }, []);
 
   const members = useMemo(() => [...new Set((rows ?? []).map((r) => r.memberName))].sort(), [rows]);
@@ -66,7 +72,7 @@ export default function IndexScreen() {
 
       {meetingFilter ? (
         <View style={styles.header}>
-          <Text style={styles.title}>표1. {meetingFilter}</Text>
+          <Text style={styles.title}>표1. {meetingShortTitle(meetingFilter)}</Text>
         </View>
       ) : (
         <View style={styles.header}>
@@ -84,7 +90,15 @@ export default function IndexScreen() {
         </Pressable>
       </View>
 
-      {tab === "overview" ? (
+      {fetchFailed ? (
+        <View style={styles.center}>
+          <Text style={styles.body}>데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</Text>
+        </View>
+      ) : filtered.length === 0 ? (
+        <View style={styles.center}>
+          <Text style={styles.body}>조건에 맞는 발언이 없습니다.</Text>
+        </View>
+      ) : tab === "overview" ? (
         <OverviewTab rows={filtered} />
       ) : (
         <ScoreGridTab rows={filtered} footnote={meetingFilter ? weightFootnote(speechTypesUsed) : ""} />
@@ -96,6 +110,7 @@ export default function IndexScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background.alternative },
   center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background.alternative },
+  body: { ...typography.body2, color: colors.label.neutral },
   linkRow: { flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: spacing[12] },
   adminLink: { paddingHorizontal: spacing[12], paddingVertical: spacing[4] },
   adminLinkText: { ...typography.label2, color: colors.label.alternative },

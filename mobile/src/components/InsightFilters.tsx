@@ -1,6 +1,7 @@
 // mobile/src/components/InsightFilters.tsx
 import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import { colors, typography, spacing, radius } from "@/theme/tokens";
+import { meetingShortTitle } from "@/lib/axes";
 
 interface Props {
   members: string[];
@@ -41,7 +42,7 @@ export function InsightFilters({
         </Pressable>
         {meetings.map((m) => (
           <Pressable key={m} onPress={() => onMeetingChange(m)} style={[styles.pill, meetingFilter === m && styles.pillActive]}>
-            <Text style={[styles.pillLabel, meetingFilter === m && styles.pillLabelActive]}>{m}</Text>
+            <Text style={[styles.pillLabel, meetingFilter === m && styles.pillLabelActive]}>{meetingShortTitle(m)}</Text>
           </Pressable>
         ))}
       </ScrollView>

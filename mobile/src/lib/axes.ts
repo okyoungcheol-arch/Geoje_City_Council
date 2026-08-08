@@ -105,3 +105,8 @@ export function axisCellLabel(value: number | null, axis: Axis, persistenceStatu
   if (axis === "persistence" && persistenceStatus === "pending_future_evaluation") return "향후평가";
   return value === null ? "―" : String(value);
 }
+
+/** backend/app/table1/Table1Client.tsx의 meetingShortTitle()과 동일한 규칙 — 첫 줄만 표시용으로 사용한다. */
+export function meetingShortTitle(fullTitle: string): string {
+  return fullTitle.split("\n")[0].trim();
+}
