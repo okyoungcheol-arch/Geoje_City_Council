@@ -7,7 +7,7 @@ import { InsightFilters } from "@/components/InsightFilters";
 import { OverviewTab } from "@/components/table1/OverviewTab";
 import { ScoreGridTab } from "@/components/table1/ScoreGridTab";
 import { AllMembersRankingTab } from "@/components/table1/AllMembersRankingTab";
-import { weightFootnote, meetingShortTitle, type SpeechType } from "@/lib/axes";
+import { meetingShortTitle } from "@/lib/kpis";
 import { MEMBER_ROSTER } from "@/lib/memberRoster";
 import { colors, spacing, typography, radius } from "@/theme/tokens";
 
@@ -37,11 +37,6 @@ export default function IndexScreen() {
 
   const filtered = (rows ?? []).filter(
     (r) => (!memberFilter || r.memberName === memberFilter) && (!meetingFilter || r.meetingTitle === meetingFilter)
-  );
-
-  const speechTypesUsed = useMemo(
-    () => [...new Set(filtered.map((r) => r.speechType as SpeechType))],
-    [filtered]
   );
 
   function handleAllMembersTabPress() {
@@ -121,7 +116,7 @@ export default function IndexScreen() {
       ) : tab === "allMembers" ? (
         <AllMembersRankingTab rows={filtered} />
       ) : (
-        <ScoreGridTab rows={filtered} footnote={meetingFilter ? weightFootnote(speechTypesUsed, ["persistence"]) : ""} />
+        <ScoreGridTab rows={filtered} />
       )}
     </View>
   );
