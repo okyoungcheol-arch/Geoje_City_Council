@@ -148,7 +148,7 @@ KPI 순서(인과 사슬): **①준비하는가 → ②논의를 이끄는가 �
 재질의율 = 재질의된 round 수 ÷ 총 질의 건수
 ```
 
-§2 "질의응답 구조"가 없는 발언(순수 5분 이상 발언 등)은 **N/A**(0점 아님) — 추궁할 대상 자체가
+§1.1 "질의응답 구조"가 없는 발언(순수 5분 이상 발언 등)은 **N/A**(0점 아님) — 추궁할 대상 자체가
 없었다는 뜻이지 감시 능력이 없다는 뜻이 아니다.
 
 ---
@@ -282,13 +282,12 @@ v2.0에서는 KPI1~4를 순수 코드로 계산하므로 LLM 채점 편향이 �
       "proposals": [{ "budget": true, "timeline": false, "subject": true, "method": true }],
       "qaRounds": [{ "roundIndex": 0, "answerGrade": "확답", "bonusTags": ["모순포착"] }],
       "selfRaisedIssues": [{ "description": "..." }],
-      "kpis": {
-        "evidenceDensity": { "value": 2.4, "grade": "B" },
-        "solutionSpecificity": { "value": 3.0, "grade": null },
-        "interrogationDepth": { "value": 1.8, "reQuestionRate": 0.5, "grade": null },
-        "commitmentRate": { "value": 0.75, "grade": null },
-        "issuePersistence": { "value": null, "status": "tracking" }
-      }
+      "kpiEvidenceDensity": 2.4,
+      "kpiEvidenceDensityGrade": "B",
+      "kpiSolutionSpecificity": 3.0,
+      "kpiInterrogationDepth": 1.8,
+      "kpiReQuestionRate": 0.5,
+      "kpiCommitmentRate": 0.75
     }
   ]
 }
