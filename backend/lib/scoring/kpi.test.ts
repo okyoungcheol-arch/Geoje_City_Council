@@ -24,6 +24,42 @@ test("computeEvidenceDensity: grade boundaries B/C/D", () => {
   expect(computeEvidenceDensity(oneCitation, 200).grade).toBe("D"); // 0.5
 });
 
+test("computeEvidenceDensity: exact boundary values (>= thresholds)", () => {
+  // Test exact threshold values to catch regressions if >= is flipped to >
+  const threeCitations = [
+    { type: "L" as const, text: "a" },
+    { type: "S" as const, text: "b" },
+    { type: "P" as const, text: "c" },
+  ];
+  const twoCitations = [
+    { type: "L" as const, text: "a" },
+    { type: "S" as const, text: "b" },
+  ];
+  const oneCitation = [{ type: "L" as const, text: "a" }];
+
+  // Exact boundary: 3.0 citations/100s → grade A (>= 3.0)
+  expect(computeEvidenceDensity(threeCitations, 100)).toEqual({ value: 3.0, grade: "A" });
+
+  // Exact boundary: 2.0 citations/100s → grade B (>= 2.0)
+  expect(computeEvidenceDensity(twoCitations, 100)).toEqual({ value: 2.0, grade: "B" });
+
+  // Exact boundary: 1.0 citation/100s → grade C (>= 1.0)
+  expect(computeEvidenceDensity(oneCitation, 100)).toEqual({ value: 1.0, grade: "C" });
+
+  // Just below boundaries (optional: verify next grade down)
+  // 2.99 citations/100s → grade B (< 3.0, >= 2.0)
+  const densityBelowA = computeEvidenceDensity(threeCitations, 100.33);
+  expect(densityBelowA.grade).toBe("B");
+
+  // 1.99 citations/100s → grade C (< 2.0, >= 1.0)
+  const densityBelowB = computeEvidenceDensity(twoCitations, 100.5);
+  expect(densityBelowB.grade).toBe("C");
+
+  // 0.99 citations/100s → grade D (< 1.0)
+  const densityBelowC = computeEvidenceDensity(oneCitation, 101.01);
+  expect(densityBelowC.grade).toBe("D");
+});
+
 test("computeEvidenceDensity: null speech duration returns null (not approximated)", () => {
   expect(computeEvidenceDensity([{ type: "L", text: "a" }], null)).toEqual({ value: null, grade: null });
 });
