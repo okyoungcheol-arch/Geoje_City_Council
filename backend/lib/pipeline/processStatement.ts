@@ -1,9 +1,15 @@
 import { db } from "@/db/client";
-import { statements, statementInsights, members, meetings, agendaItems } from "@/db/schema";
-import { and, count, eq, isNull } from "drizzle-orm";
+import { statements, statementInsights, members, meetings, agendaItems, issueTickets, issueReviews } from "@/db/schema";
+import { and, count, eq, isNull, gt, asc } from "drizzle-orm";
 import { summarizeStatement } from "@/lib/ai/summarize";
-import { scoreStatement, type PriorStatementContext } from "@/lib/ai/score";
-import { computeWeightedScore, type AxisScores } from "@/lib/scoring/weightedAverage";
+import { hasQaStructure, extractQaRounds } from "@/lib/ai/extractQaRounds";
+import { matchIssues } from "@/lib/ai/matchIssues";
+import {
+  computeEvidenceDensity,
+  computeSolutionSpecificity,
+  computeInterrogationDepth,
+  computeCommitmentRate,
+} from "@/lib/scoring/kpi";
 import { isNonMemberSpeaker } from "@/lib/members/isNonMemberSpeaker";
 
 function sleep(ms: number) {
@@ -17,31 +23,46 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
       return await fn();
     } catch (err) {
       lastErr = err;
-      // Account is on a strict burst rate limit for claude-opus-5 (observed:
-      // roughly 1 request lands per ~5 back-to-back attempts). 5s/10s/20s backoff.
       await sleep(5000 * 2 ** i);
     }
   }
   throw lastErr;
 }
 
-async function getPriorContext(memberId: number, currentMeetingId: number): Promise<PriorStatementContext[]> {
+/**
+ * 현재 statement 이후, 같은 회의 내 다음 "의원" statement가 나오기 전까지의 화자 이름들과
+ * 답변 원문을 가져온다. hasQaStructure()가 이걸로 질의응답 구조 유무를 판정하고, 있으면
+ * extractQaRounds()에 답변 원문들을 넘긴다.
+ */
+async function getFollowingTurnsUntilNextMember(
+  meetingId: number,
+  orderInMeeting: number
+): Promise<{ speakerNames: string[]; answerTexts: string[] }> {
   const rows = await db
-    .select({ meetingTitle: meetings.title, summary: statementInsights.summary, meetingId: statements.meetingId })
-    .from(statementInsights)
-    .innerJoin(statements, eq(statementInsights.statementId, statements.id))
-    .innerJoin(meetings, eq(statements.meetingId, meetings.id))
-    .where(and(eq(statements.memberId, memberId), isNull(statementInsights.excludedReason)))
-    .orderBy(statements.meetingId)
-    .limit(3);
+    .select({ name: members.name, rawText: statements.rawText })
+    .from(statements)
+    .innerJoin(members, eq(statements.memberId, members.id))
+    .where(and(eq(statements.meetingId, meetingId), gt(statements.orderInMeeting, orderInMeeting)))
+    .orderBy(asc(statements.orderInMeeting));
 
-  return rows.filter((r) => r.meetingId !== currentMeetingId).map((r) => ({ meetingTitle: r.meetingTitle, summary: r.summary }));
+  const speakerNames: string[] = [];
+  const answerTexts: string[] = [];
+  for (const row of rows) {
+    if (!isNonMemberSpeaker(row.name)) break; // next member turn — stop
+    speakerNames.push(row.name);
+    answerTexts.push(row.rawText);
+  }
+  return { speakerNames, answerTexts };
 }
 
-// "Pending" = a statement with no statement_insights row yet. Both helpers below express
-// that as a LEFT JOIN ... WHERE statement_insights.id IS NULL so the anti-join runs in
-// Postgres. They used to pull both tables into JS and diff them there, which was fine as a
-// once-per-CLI-run query but is now hit every ~4s by the admin screen's batch polling.
+async function getOpenTickets(memberId: number): Promise<{ id: number; description: string }[]> {
+  const rows = await db
+    .select({ id: issueTickets.id, description: issueTickets.description })
+    .from(issueTickets)
+    .where(and(eq(issueTickets.memberId, memberId), eq(issueTickets.status, "open")));
+  return rows;
+}
+
 export async function getPendingStatementIds(limit?: number): Promise<number[]> {
   const base = db
     .select({ id: statements.id })
@@ -89,7 +110,7 @@ export async function processOneStatement(statementId: number): Promise<ProcessR
       return { statementId, outcome: "excluded", reason: "의원 아님(집행부/사무국)" };
     }
 
-    const { summary, tags, isProcedural, speechType } = await withRetry(() =>
+    const { summary, tags, isProcedural, speechType, citations, proposals, selfRaisedIssues } = await withRetry(() =>
       summarizeStatement(stmt.rawText, agendaTitle)
     );
 
@@ -104,40 +125,70 @@ export async function processOneStatement(statementId: number): Promise<ProcessR
       return { statementId, outcome: "excluded", reason: "의사진행 발언" };
     }
 
-    const priorContext = await getPriorContext(stmt.memberId, stmt.meetingId);
-    const scores = await withRetry(() => scoreStatement(stmt.rawText, summary, speechType, priorContext));
+    const { speakerNames, answerTexts } = await getFollowingTurnsUntilNextMember(stmt.meetingId, stmt.orderInMeeting);
+    const qaStructurePresent = hasQaStructure(speakerNames);
+    const qaRounds = qaStructurePresent ? await withRetry(() => extractQaRounds(stmt.rawText, answerTexts)) : [];
 
-    const axisScores: AxisScores = {
-      creativity: scores.creativity,
-      feasibility: scores.feasibility,
-      evidenceLegal: scores.evidenceLegal,
-      persistence: scores.persistence,
-      oversight: scores.oversight,
-      citizenBenefit: scores.citizenBenefit,
-      futureStrategy: scores.futureStrategy,
-      cityDevelopment: scores.cityDevelopment,
-    };
-    const weightedScore = computeWeightedScore(axisScores, speechType);
+    // TODO: speechDurationSec is not yet captured by the scraper (backend/scripts/scrape/minutes.ts) —
+    // wire this up once that data is available. Until then, KPI1 (근거밀도) is always N/A.
+    const speechDurationSec: number | null = null;
+    const evidenceDensity = computeEvidenceDensity(citations, speechDurationSec);
+    const solutionSpecificity = computeSolutionSpecificity(proposals);
+    const interrogationDepth = computeInterrogationDepth(qaRounds);
+    const commitmentRate = computeCommitmentRate(qaRounds);
+
+    let opusModel: string | null = null;
+    if (selfRaisedIssues.length > 0) {
+      const openTickets = await getOpenTickets(stmt.memberId);
+      if (openTickets.length > 0) {
+        const matches = await withRetry(() => matchIssues(selfRaisedIssues.map((i) => i.description), openTickets));
+        opusModel = "claude-opus-5";
+        for (const match of matches) {
+          if (match.matchedTicketId !== null) {
+            await db.insert(issueReviews).values({
+              ticketId: match.matchedTicketId,
+              reviewedStatementId: stmt.id,
+              reviewedMeetingId: stmt.meetingId,
+            });
+          } else {
+            await db.insert(issueTickets).values({
+              memberId: stmt.memberId,
+              description: selfRaisedIssues[match.newIssueIndex].description,
+              registeredStatementId: stmt.id,
+              registeredMeetingId: stmt.meetingId,
+            });
+          }
+        }
+      } else {
+        for (const issue of selfRaisedIssues) {
+          await db.insert(issueTickets).values({
+            memberId: stmt.memberId,
+            description: issue.description,
+            registeredStatementId: stmt.id,
+            registeredMeetingId: stmt.meetingId,
+          });
+        }
+      }
+    }
 
     await db.insert(statementInsights).values({
       statementId: stmt.id,
       summary,
       tags,
       speechType,
-      creativity: scores.creativity,
-      feasibility: scores.feasibility,
-      evidenceLegal: scores.evidenceLegal,
-      persistence: scores.persistence,
-      persistenceStatus: scores.persistence === null ? "pending_future_evaluation" : "scored",
-      oversight: scores.oversight,
-      citizenBenefit: scores.citizenBenefit,
-      futureStrategy: scores.futureStrategy,
-      cityDevelopment: scores.cityDevelopment,
-      weightedScore: weightedScore === null ? null : String(weightedScore),
-      topicsToWatch: scores.topicsToWatch,
-      rationale: scores.rationale,
+      hasQaStructure: qaStructurePresent,
+      citations,
+      kpiEvidenceDensity: evidenceDensity.value === null ? null : String(evidenceDensity.value),
+      kpiEvidenceDensityGrade: evidenceDensity.grade,
+      proposals,
+      kpiSolutionSpecificity: solutionSpecificity === null ? null : String(solutionSpecificity),
+      qaRounds,
+      kpiInterrogationDepth: interrogationDepth === null ? null : String(interrogationDepth.value),
+      kpiReQuestionRate: interrogationDepth === null ? null : String(interrogationDepth.reQuestionRate),
+      kpiCommitmentRate: commitmentRate === null ? null : String(commitmentRate),
+      selfRaisedIssues,
       sonnetModel: "claude-sonnet-5",
-      opusModel: "claude-opus-5",
+      opusModel,
     });
 
     return { statementId, outcome: "processed" };
