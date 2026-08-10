@@ -10,16 +10,17 @@ function makeRow(overrides: Record<string, unknown>) {
     tags: ["재해예방"],
     topicsToWatch: ["예산 집행 여부 재확인"],
     speechType: "budget_review",
-    creativity: null,
-    feasibility: 4,
-    evidenceLegal: 5,
-    persistence: null,
-    persistenceStatus: "pending_future_evaluation",
-    oversight: 3,
-    citizenBenefit: 4,
-    futureStrategy: 3,
-    cityDevelopment: 4,
-    weightedScore: "3.93",
+    hasQaStructure: false,
+    citations: [],
+    kpiEvidenceDensity: "3.5",
+    kpiEvidenceDensityGrade: "B",
+    proposals: [],
+    kpiSolutionSpecificity: null,
+    qaRounds: [],
+    kpiInterrogationDepth: null,
+    kpiReQuestionRate: null,
+    kpiCommitmentRate: null,
+    selfRaisedIssues: [],
     summary: "요약",
     rawText: "원문",
     rationale: "근거",
@@ -86,10 +87,12 @@ test("a meeting with 3+ members but zero agendaItems rows is excluded (부의된
   expect(rows.some((r) => r.meetingTitle === "회의 C")).toBe(false);
 });
 
-test("weightedScore is coerced to number and nullable axes stay null", async () => {
+test("numeric KPI columns are coerced to number and null KPIs stay null", async () => {
   const rows = await getInsightRows();
   const row = rows.find((r) => r.statementId === 1)!;
-  expect(row.weightedScore).toBe(3.93);
-  expect(row.creativity).toBeNull();
-  expect(row.persistenceStatus).toBe("pending_future_evaluation");
+  expect(row.kpiEvidenceDensity).toBe(3.5);
+  expect(row.kpiSolutionSpecificity).toBeNull();
+  expect(row.kpiInterrogationDepth).toBeNull();
+  expect(row.kpiReQuestionRate).toBeNull();
+  expect(row.kpiCommitmentRate).toBeNull();
 });
