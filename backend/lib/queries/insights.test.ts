@@ -1,5 +1,6 @@
 import { test, expect, vi } from "vitest";
-import { getInsightRows } from "./insights";
+import { getInsightRows, getMemberIssuePersistence } from "./insights";
+import { issueTickets, issueReviews } from "@/db/schema";
 
 function makeRow(overrides: Record<string, unknown>) {
   return {
@@ -47,18 +48,53 @@ const fixture = [
 // meetingId 3(회의 C)은 agendaItems가 0건(개회식류 시나리오).
 const agendaItemMeetingIds = [{ meetingId: 1 }, { meetingId: 2 }];
 
+// getMemberIssuePersistence fixtures — kept separate from the getInsightRows fixture above
+// since it queries issueTickets/issueReviews (member-level accumulation), not statementInsights.
+//
+// 김영규: 4 tickets across 3 distinct meetings (201/202/203, one meeting has 2 tickets),
+//   2 of 4 reviewed (101, 103) -> 3+ sessions -> "scored", rate 2/4=0.5 -> grade "B".
+// 홍길동: 3 tickets across only 2 distinct meetings (301/302) -> below the 3-session
+//   threshold -> "tracking" regardless of ticket count, none reviewed.
+// 부의장 임수환 / 임수환: same real member, registered under two differently-formatted name
+//   strings (mirrors the normalizeMemberName scenario already covered for getInsightRows
+//   above) -> must aggregate into a single entry, one ticket per distinct meeting (401/402/403).
+const ticketRowsFixture = [
+  { memberName: "김영규", ticketId: 101, registeredMeetingId: 201 },
+  { memberName: "김영규", ticketId: 102, registeredMeetingId: 202 },
+  { memberName: "김영규", ticketId: 103, registeredMeetingId: 203 },
+  { memberName: "김영규", ticketId: 104, registeredMeetingId: 203 },
+  { memberName: "홍길동", ticketId: 105, registeredMeetingId: 301 },
+  { memberName: "홍길동", ticketId: 106, registeredMeetingId: 301 },
+  { memberName: "홍길동", ticketId: 107, registeredMeetingId: 302 },
+  { memberName: "부의장 임수환", ticketId: 201, registeredMeetingId: 401 },
+  { memberName: "임수환", ticketId: 202, registeredMeetingId: 402 },
+  { memberName: "임수환", ticketId: 203, registeredMeetingId: 403 },
+];
+const reviewedTicketIdsFixture = [{ ticketId: 101 }, { ticketId: 103 }];
+
+// A chainable+thenable stub: getInsightRows() terminates its chain with `.where(...)`, while
+// getMemberIssuePersistence() awaits the innerJoin/from result directly with no `.where()`.
+// Making every stage both chainable (innerJoin/where return another stage) and thenable
+// (awaitable on its own) lets one stub satisfy both call shapes.
+function chainable(rows: unknown[]) {
+  const promise = Promise.resolve(rows);
+  return {
+    innerJoin: () => chainable(rows),
+    where: () => Promise.resolve(rows),
+    then: promise.then.bind(promise),
+    catch: promise.catch.bind(promise),
+    finally: promise.finally.bind(promise),
+  };
+}
+
 vi.mock("@/db/client", () => ({
   db: {
     select: () => ({
-      from: () => ({
-        innerJoin: () => ({
-          innerJoin: () => ({
-            innerJoin: () => ({
-              where: () => Promise.resolve(fixture),
-            }),
-          }),
-        }),
-      }),
+      from: (table: unknown) => {
+        if (table === issueTickets) return chainable(ticketRowsFixture);
+        if (table === issueReviews) return chainable(reviewedTicketIdsFixture);
+        return chainable(fixture); // statementInsights flow (getInsightRows)
+      },
     }),
     selectDistinct: () => ({
       from: () => Promise.resolve(agendaItemMeetingIds),
@@ -95,4 +131,43 @@ test("numeric KPI columns are coerced to number and null KPIs stay null", async 
   expect(row.kpiInterrogationDepth).toBeNull();
   expect(row.kpiReQuestionRate).toBeNull();
   expect(row.kpiCommitmentRate).toBeNull();
+});
+
+test("a member with 3+ distinct registeredMeetingId values and mixed reviewed/unreviewed tickets is scored with a correct rate and grade", async () => {
+  const results = await getMemberIssuePersistence();
+  const entry = results.find((r) => r.memberName === "김영규")!;
+  expect(entry.status).toBe("scored");
+  expect(entry.totalIssues).toBe(4);
+  expect(entry.reviewedIssues).toBe(2);
+  expect(entry.rate).toBe(0.5); // 2/4, rounded per getMemberIssuePersistence's Math.round(...*100)/100
+  expect(entry.grade).toBe("B"); // computeIssuePersistenceGrade: 0.4 <= 0.5 < 0.6
+});
+
+test("a member with fewer than 3 distinct registeredMeetingId values is tracking regardless of ticket count", async () => {
+  const results = await getMemberIssuePersistence();
+  const entry = results.find((r) => r.memberName === "홍길동")!;
+  // 3 tickets but only 2 distinct meetings (301 appears twice) -> below MIN_SESSIONS_FOR_RATE.
+  expect(entry.totalIssues).toBe(3);
+  expect(entry.status).toBe("tracking");
+  expect(entry.rate).toBeNull();
+  expect(entry.grade).toBeNull();
+});
+
+test("tickets registered under differently-formatted name variants aggregate into a single member entry", async () => {
+  const results = await getMemberIssuePersistence();
+  // "부의장 임수환" (1 ticket) and "임수환" (2 tickets) must normalize to one "임수환" entry,
+  // not two separate rows — same normalizeMemberName concern already covered for
+  // getInsightRows() above, but exercised here through getMemberIssuePersistence's own
+  // independent aggregation path.
+  const matching = results.filter((r) => r.memberName === "임수환");
+  expect(matching).toHaveLength(1);
+  expect(matching[0].totalIssues).toBe(3);
+});
+
+test("a ticketId present in issueReviews counts as reviewed; one absent counts as unreviewed", async () => {
+  const results = await getMemberIssuePersistence();
+  const entry = results.find((r) => r.memberName === "김영규")!;
+  // Of 김영규's 4 tickets (101-104), only 101 and 103 appear in reviewedTicketIdsFixture.
+  expect(entry.reviewedIssues).toBe(2);
+  expect(entry.totalIssues - entry.reviewedIssues).toBe(2); // 102, 104 stay unreviewed
 });
