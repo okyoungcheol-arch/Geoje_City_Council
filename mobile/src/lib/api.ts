@@ -152,3 +152,19 @@ export async function fetchInsightWithSiblings(
 
   return { row, siblings };
 }
+
+export interface MemberIssuePersistence {
+  memberName: string;
+  totalIssues: number;
+  reviewedIssues: number;
+  rate: number | null;
+  grade: string | null;
+  status: "scored" | "tracking";
+}
+
+export async function fetchIssuePersistence(): Promise<MemberIssuePersistence[]> {
+  const base = process.env.EXPO_PUBLIC_API_BASE_URL;
+  const res = await fetch(`${base}/api/issue-persistence`);
+  if (!res.ok) throw new Error(`Failed to fetch issue persistence: ${res.status}`);
+  return res.json();
+}
