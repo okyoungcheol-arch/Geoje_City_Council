@@ -45,7 +45,7 @@ import { useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { router } from "expo-router";
 import { groupByMemberMeeting, type InsightGroup, type InsightRow } from "@/lib/api";
-import { colors, typography, spacing, radius } from "@/theme/tokens";
+import { colors, typography, spacing } from "@/theme/tokens";
 
 type SortField = "member" | "tags" | "score";
 type SortDirection = "asc" | "desc";
@@ -67,6 +67,10 @@ function compareGroups(a: InsightGroup, b: InsightGroup, field: SortField): numb
   return a.representative.tags.join(", ").localeCompare(b.representative.tags.join(", "), "ko");
 }
 
+function defaultDirectionFor(field: SortField): SortDirection {
+  return field === "score" ? "desc" : "asc";
+}
+
 export function OverviewTab({ rows }: { rows: InsightRow[] }) {
   const [sort, setSort] = useState<SortState>({ field: "score", direction: "desc" });
 
@@ -80,7 +84,7 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
     setSort((prev) =>
       prev.field === field
         ? { field, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { field, direction: "desc" }
+        : { field, direction: defaultDirectionFor(field) }
     );
   }
 
@@ -178,7 +182,7 @@ Run: `cd mobile && npx expo start --web`
 - 카드가 아니라 의원명/태그/평가점수 3컬럼 표로 보인다.
 - 기본 정렬이 평가점수 내림차순이다(가장 높은 점수가 맨 위).
 - "평가점수" 헤더를 한 번 더 탭하면 오름차순으로 바뀌고, 헤더 라벨에 ▲가 표시된다.
-- "의원명" 헤더를 탭하면 의원명 가나다순으로 정렬되고, 헤더 라벨에 ▼가 표시된다.
+- "의원명" 헤더를 탭하면 의원명 가나다순으로 정렬되고, 헤더 라벨에 ▲가 표시된다.
 - 태그가 긴 행이 한 줄로 말줄임(...) 처리된다.
 - 아무 데이터 행이나 탭하면 `/statement/[id]` 상세 화면으로 이동한다.
 - 스크롤해도 헤더 행이 화면 상단에 고정되어 있다.
