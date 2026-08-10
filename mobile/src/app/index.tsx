@@ -6,11 +6,12 @@ import { fetchInsights, type InsightRow } from "@/lib/api";
 import { InsightFilters } from "@/components/InsightFilters";
 import { OverviewTab } from "@/components/table1/OverviewTab";
 import { ScoreGridTab } from "@/components/table1/ScoreGridTab";
+import { AllMembersRankingTab } from "@/components/table1/AllMembersRankingTab";
 import { weightFootnote, meetingShortTitle, type SpeechType } from "@/lib/axes";
 import { MEMBER_ROSTER } from "@/lib/memberRoster";
 import { colors, spacing, typography, radius } from "@/theme/tokens";
 
-type Tab = "overview" | "scores";
+type Tab = "overview" | "scores" | "allMembers";
 
 export default function IndexScreen() {
   const [rows, setRows] = useState<InsightRow[] | null>(null);
@@ -43,6 +44,12 @@ export default function IndexScreen() {
     [filtered]
   );
 
+  function handleAllMembersTabPress() {
+    setMemberFilter("");
+    setMeetingFilter("");
+    setTab("allMembers");
+  }
+
   if (!rows) {
     return (
       <View style={styles.center}>
@@ -68,13 +75,18 @@ export default function IndexScreen() {
         </Pressable>
       </View>
 
-      {meetingFilter ? (
+      {tab === "allMembers" ? (
+        <View style={styles.header}>
+          <Text style={styles.title}>전체의원 랭킹</Text>
+          <Text style={styles.disclaimer}>의원별로 참여한 모든 회의의 평가점수를 산술평균한 값입니다.</Text>
+        </View>
+      ) : meetingFilter ? (
         <View style={styles.header}>
           <Text style={styles.title}>표1. {meetingShortTitle(meetingFilter)}</Text>
         </View>
       ) : (
         <View style={styles.header}>
-          <Text style={styles.title}>전체 발언 랭킹</Text>
+          <Text style={styles.title}>회의별 랭킹</Text>
           <Text style={styles.disclaimer}>회의를 선택하면 해당 회의의 표1로 전환됩니다.</Text>
         </View>
       )}
@@ -90,6 +102,9 @@ export default function IndexScreen() {
         <Pressable style={[styles.tabButton, tab === "scores" && styles.tabButtonActive]} onPress={() => setTab("scores")}>
           <Text style={[styles.tabLabel, tab === "scores" && styles.tabLabelActive]}>세부항목</Text>
         </Pressable>
+        <Pressable style={[styles.tabButton, tab === "allMembers" && styles.tabButtonActive]} onPress={handleAllMembersTabPress}>
+          <Text style={[styles.tabLabel, tab === "allMembers" && styles.tabLabelActive]}>전체의원랭킹</Text>
+        </Pressable>
       </View>
 
       {fetchFailed ? (
@@ -102,6 +117,8 @@ export default function IndexScreen() {
         </View>
       ) : tab === "overview" ? (
         <OverviewTab rows={filtered} />
+      ) : tab === "allMembers" ? (
+        <AllMembersRankingTab rows={filtered} />
       ) : (
         <ScoreGridTab rows={filtered} footnote={meetingFilter ? weightFootnote(speechTypesUsed, ["persistence"]) : ""} />
       )}
