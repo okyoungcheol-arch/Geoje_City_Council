@@ -1,4 +1,6 @@
 // mobile/src/lib/api.ts
+import { MEMBER_ROSTER } from "./memberRoster";
+
 export interface InsightRow {
   statementId: number;
   meetingTitle: string;
@@ -36,7 +38,12 @@ export async function fetchInsights(filters: InsightFilters = {}): Promise<Insig
 
   const res = await fetch(`${base}/api/insights?${params.toString()}`);
   if (!res.ok) throw new Error(`Failed to fetch insights: ${res.status}`);
-  return res.json();
+  const rows: InsightRow[] = await res.json();
+
+  // backend/lib/members/isNonMemberSpeaker.ts만으로는 "상임이사"/"…부장" 같은 비의원 직함을
+  // 다 걸러내지 못해, 의원이 아닌 발언자의 통계도 statementInsights에 남아 있을 수 있다.
+  // 표시 화면은 항상 의정활동(council member) 대상이어야 하므로 여기서 한 번 더 걸러낸다.
+  return rows.filter((r) => MEMBER_ROSTER.has(r.memberName));
 }
 
 export async function fetchInsightById(id: number): Promise<InsightRow | null> {

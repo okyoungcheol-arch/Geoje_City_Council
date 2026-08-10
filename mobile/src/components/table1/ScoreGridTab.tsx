@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   meetingCell: { width: 132, alignItems: "flex-start" },
   scoreCell: { width: SCORE_COLUMN_WIDTH },
   headerLabel: { ...typography.label2, color: colors.label.alternative },
-  memberLabel: { ...typography.label1, color: colors.primary.normal },
+  memberLabel: { ...typography.label1, color: colors.primary.normal, textDecorationLine: "underline" },
   meetingLabel: { ...typography.caption1, color: colors.label.neutral },
   scoreLabel: { ...typography.body2, color: colors.label.normal },
   footnote: { ...typography.caption2, color: colors.label.alternative, marginTop: spacing[12] },

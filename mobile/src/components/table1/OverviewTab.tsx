@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   tagsCell: { flex: 1 },
   scoreCell: { width: 72, alignItems: "flex-end" },
   headerLabel: { ...typography.label2, color: colors.label.alternative },
-  memberLabel: { ...typography.label1, color: colors.label.normal },
+  memberLabel: { ...typography.label1, color: colors.primary.normal, textDecorationLine: "underline" },
   tagsLabel: { ...typography.body2, color: colors.label.neutral },
   scoreLabel: { ...typography.headline1, color: colors.primary.normal },
 });
