@@ -2797,13 +2797,274 @@ git commit -m "feat(mobile): show citations, proposal checklist, Q&A rounds, iss
 
 ---
 
-## Task 19: 전체 검증 및 파일럿 재처리
+> **Task 19·20 추가 경위**: Task 7 구현 중 `backend/lib/scoring/weightedAverage.ts`를 삭제하자
+> `backend/app/table1/Table1Client.tsx`(웹 대시보드, `/table1` 라우트)와
+> `backend/scripts/report/generate-tables.ts`(CLI 리포트 생성 스크립트)가 컴파일 에러 상태가
+> 되는 것을 발견했다 — 둘 다 원래 계획의 탐색(Explore) 단계에서 누락된 8축 시스템의 소비처였다.
+> 사용자 확인 결과 두 파일 모두 5-KPI로 마이그레이션하기로 결정, 아래 Task 19·20으로 계획에
+> 추가한다.
+
+## Task 19: 웹 대시보드(Table1Client.tsx) 5-KPI 마이그레이션
+
+**Files:**
+- Modify: `backend/app/table1/Table1Client.tsx`
+- Modify: `backend/app/table1/page.tsx` (변경 불필요 여부만 확인 — `getInsightRows()`를 그대로
+  호출해 `Table1Client`에 넘기는 얇은 서버 컴포넌트이므로, `InsightRow` 타입이 Task 10에서
+  바뀌어도 이 파일 자체는 수정할 필요가 없을 가능성이 높다. 실제로 수정이 필요 없다면 건드리지
+  않는다.)
+
+**Interfaces:**
+- Consumes: `InsightRow`(Task 10, `backend/lib/queries/insights.ts`) — 8축 필드 대신
+  `kpiEvidenceDensity`/`kpiEvidenceDensityGrade`/`kpiSolutionSpecificity`/
+  `kpiInterrogationDepth`/`kpiReQuestionRate`/`kpiCommitmentRate`/`hasQaStructure` 필드를 가짐.
+- Produces: 없음(리프 컴포넌트).
+
+- [ ] **Step 1: 8축 상수와 가중치 각주를 4-KPI 상수로 교체**
+
+`backend/app/table1/Table1Client.tsx`의 1~45행을 교체:
+
+```tsx
+"use client";
+
+import { useMemo, useState } from "react";
+import type { InsightRow } from "@/lib/queries/insights";
+import styles from "./table1.module.css";
+
+type Kpi = "kpiEvidenceDensity" | "kpiSolutionSpecificity" | "kpiInterrogationDepth" | "kpiCommitmentRate";
+
+const KPIS: Kpi[] = ["kpiEvidenceDensity", "kpiSolutionSpecificity", "kpiInterrogationDepth", "kpiCommitmentRate"];
+
+const KPI_LABELS: Record<Kpi, string> = {
+  kpiEvidenceDensity: "근거밀도",
+  kpiSolutionSpecificity: "대안구체성",
+  kpiInterrogationDepth: "추궁심도",
+  kpiCommitmentRate: "답변확보율",
+};
+
+function meetingShortTitle(fullTitle: string): string {
+  return fullTitle.split("\n")[0].trim();
+}
+
+function kpiCellLabel(row: InsightRow, kpi: Kpi): string {
+  const value = row[kpi];
+  if (value === null) return "―";
+  if (kpi === "kpiCommitmentRate") return `${Math.round(value * 100)}%`;
+  if (kpi === "kpiEvidenceDensity") return `${value.toFixed(2)}${row.kpiEvidenceDensityGrade ? `(${row.kpiEvidenceDensityGrade})` : ""}`;
+  return value.toFixed(2);
+}
+```
+
+(`weightFootnote`와 `cellValue` 함수, `AXIS_LABELS`/`SPEECH_TYPE_LABELS` 상수는 종합점수·가중치표가
+폐지되었으므로 완전히 삭제한다 — 대체 함수 없음.)
+
+- [ ] **Step 2: 정렬 기준을 `weightedScore` 대신 선택 가능한 KPI로 변경**
+
+`Table1Client` 함수 본문(옛 47~64행)에서 정렬·상태 관리 부분을 교체:
+
+```tsx
+export function Table1Client({ rows }: { rows: InsightRow[] }) {
+  const meetings = useMemo(() => {
+    const map = new Map<string, InsightRow[]>();
+    for (const r of rows) {
+      const key = r.meetingTitle;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
+    }
+    return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
+  }, [rows]);
+
+  const [selectedMeeting, setSelectedMeeting] = useState(meetings[0]?.[0] ?? "");
+  const [tab, setTab] = useState<"overview" | "scores">("overview");
+  const [modalMember, setModalMember] = useState<InsightRow | null>(null);
+  const [activeKpi, setActiveKpi] = useState<Kpi>("kpiEvidenceDensity");
+
+  const meetingRows = meetings.find(([title]) => title === selectedMeeting)?.[1] ?? [];
+  const sorted = [...meetingRows].sort((a, b) => (b[activeKpi] ?? -Infinity) - (a[activeKpi] ?? -Infinity));
+```
+
+(이후 `speechTypesUsed` 변수는 각주 폐지로 더 이상 필요 없으므로 삭제한다.)
+
+- [ ] **Step 3: 옛 "가중평균" 표시를 활성 KPI 값으로, 축별 점수 표를 4-KPI 표로 교체**
+
+`overviewScore`를 표시하던 부분(옛 122행)을 `{kpiCellLabel(row, activeKpi)}`로 교체하고, 그
+위에 KPI 선택 버튼 목록을 추가한다(탭바 `nav` 바로 아래):
+
+```tsx
+      <div className={styles.tabbar} style={{ marginTop: 4 }}>
+        {KPIS.map((kpi) => (
+          <button
+            key={kpi}
+            className={activeKpi === kpi ? `${styles.tabButton} ${styles.tabButtonActive}` : styles.tabButton}
+            onClick={() => setActiveKpi(kpi)}
+          >
+            {KPI_LABELS[kpi]}
+          </button>
+        ))}
+      </div>
+```
+
+"축별 점수" 탭(옛 136~169행)의 `<thead>`/`<tbody>`를 `AXES.map` 대신 `KPIS.map`으로, `cellValue(row, a)`
+호출을 `kpiCellLabel(row, kpi)`로 교체하고, 지속성 관련 `pendingBadge` 분기와 `weightFootnote` 호출
+(`<pre className={styles.footnote}>`)은 삭제한다(종합점수·가중치표 폐지).
+
+- [ ] **Step 4: 모달(표2) 내 "가중평균" 배지를 KPI 그리드로 교체**
+
+옛 178행의 `<span className={styles.scoreBadge}>가중평균 {modalMember.weightedScore.toFixed(2)}</span>`를
+삭제하고, "발언 요약" 섹션 앞에 KPI 그리드를 추가:
+
+```tsx
+            <div className={styles.scoreTableWrap}>
+              {KPIS.map((kpi) => (
+                <span key={kpi} className={styles.scoreBadge} style={{ marginRight: 8 }}>
+                  {KPI_LABELS[kpi]} {kpiCellLabel(modalMember, kpi)}
+                </span>
+              ))}
+            </div>
+```
+
+- [ ] **Step 5: `page.tsx` 확인**
+
+`backend/app/table1/page.tsx`를 읽고, `getInsightRows()`/`Table1Client` 호출 시그니처가
+Task 10의 새 `InsightRow` 타입과 그대로 호환되는지 확인한다(이 파일은 `rows`를 그대로 전달만
+하므로 수정이 필요 없을 가능성이 높다 — 실제로 타입 에러가 없다면 손대지 않는다).
+
+- [ ] **Step 6: 확인**
+
+Run: `cd backend && npx tsc --noEmit`
+Expected: `backend/app/table1/` 관련 타입 에러 없음
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add backend/app/table1/Table1Client.tsx
+git commit -m "feat(web): migrate table1 dashboard from 8-axis weighted score to 5-KPI display"
+```
+
+---
+
+## Task 20: `generate-tables.ts` 5-KPI 마이그레이션
+
+**Files:**
+- Modify: `backend/scripts/report/generate-tables.ts`
+
+**Interfaces:**
+- Consumes: `statementInsights`(Task 8, `backend/db/schema.ts`) — 8축 컬럼 대신
+  `kpiEvidenceDensity`/`kpiEvidenceDensityGrade`/`kpiSolutionSpecificity`/
+  `kpiInterrogationDepth`/`kpiCommitmentRate`/`hasQaStructure` 컬럼.
+- Produces: 없음(CLI 스크립트, stdout 출력).
+
+- [ ] **Step 1: select 컬럼과 라벨 상수를 4-KPI로 교체**
+
+`backend/scripts/report/generate-tables.ts`의 1~35행을 교체:
+
+```ts
+// Renders docs/rubric/CLAUDE.md §6.2(표1)·§6.3(표2)를 실 statement_insights 데이터로 렌더링.
+import { db } from "@/db/client";
+import { statements, statementInsights, members, meetings } from "@/db/schema";
+import { eq, isNull } from "drizzle-orm";
+
+function cell(v: number | null): string {
+  return v === null ? "―" : String(v);
+}
+
+function commitmentCell(v: number | null): string {
+  return v === null ? "―" : `${Math.round(v * 100)}%`;
+}
+```
+
+`main()` 함수 내부의 `db.select({...})` 컬럼 목록(옛 38~60행)을 교체:
+
+```ts
+  const rows = await db
+    .select({
+      statementId: statements.id,
+      meetingId: statements.meetingId,
+      meetingTitle: meetings.title,
+      memberName: members.name,
+      summary: statementInsights.summary,
+      tags: statementInsights.tags,
+      topicsToWatch: statementInsights.topicsToWatch,
+      speechType: statementInsights.speechType,
+      hasQaStructure: statementInsights.hasQaStructure,
+      kpiEvidenceDensity: statementInsights.kpiEvidenceDensity,
+      kpiEvidenceDensityGrade: statementInsights.kpiEvidenceDensityGrade,
+      kpiSolutionSpecificity: statementInsights.kpiSolutionSpecificity,
+      kpiInterrogationDepth: statementInsights.kpiInterrogationDepth,
+      kpiCommitmentRate: statementInsights.kpiCommitmentRate,
+      rationale: statementInsights.rationale,
+      rawText: statements.rawText,
+    })
+    .from(statementInsights)
+    .innerJoin(statements, eq(statementInsights.statementId, statements.id))
+    .innerJoin(meetings, eq(statements.meetingId, meetings.id))
+    .innerJoin(members, eq(statements.memberId, members.id))
+    .where(isNull(statementInsights.excludedReason));
+```
+
+- [ ] **Step 2: 표1 마크다운 출력을 4-KPI 컬럼으로 교체**
+
+표1 헤더·행 출력부(옛 77~105행)를 교체:
+
+```ts
+    console.log(`\n### 표1. ${title}\n`);
+    console.log("| 의원 | 주제 | 태그(주요발언) | 향후 감시할 주제 | 근거밀도 | 대안구체성 | 추궁심도 | 답변확보율 |");
+    console.log("|---|---|---|---|:--:|:--:|:--:|:--:|");
+
+    for (const r of meetingRows) {
+      const topic = r.tags?.[0] ?? r.summary.slice(0, 20);
+      const tagCells = (r.tags ?? []).map((t) => `\`#${t}\``).join(" ");
+      const watchCell = (r.topicsToWatch ?? []).join("; ") || "―";
+      const anchor = `#${encodeURIComponent(r.memberName)}`;
+      const evidenceDensityCell =
+        r.kpiEvidenceDensity === null
+          ? "―"
+          : `${Number(r.kpiEvidenceDensity).toFixed(2)}${r.kpiEvidenceDensityGrade ? `(${r.kpiEvidenceDensityGrade})` : ""}`;
+      const row = [
+        `[${r.memberName}](${anchor})`,
+        topic,
+        tagCells,
+        watchCell,
+        evidenceDensityCell,
+        cell(r.kpiSolutionSpecificity === null ? null : Number(r.kpiSolutionSpecificity)),
+        cell(r.kpiInterrogationDepth === null ? null : Number(r.kpiInterrogationDepth)),
+        commitmentCell(r.kpiCommitmentRate === null ? null : Number(r.kpiCommitmentRate)),
+      ];
+      console.log(`| ${row.join(" | ")} |`);
+
+      memberDetail.set(
+        r.memberName,
+        `### 표2. ${r.memberName}\n\n**발언 요약**: ${r.summary}\n\n**태그**: ${(r.tags ?? [])
+          .map((t) => `#${t}`)
+          .join(" ")}\n\n**향후 감시 주제**: ${(r.topicsToWatch ?? []).join("; ") || "없음"}\n\n**채점 근거**: ${r.rationale}\n`
+      );
+    }
+```
+
+(`speechTypesUsed` 수집과 각주 출력 블록, `AXIS_WEIGHTS`/`AXIS_LABELS`/`AXIS_ORDER` 참조는 가중치표
+폐지로 전부 삭제한다. `SpeechType` import도 더 이상 각주에 쓰이지 않으면 제거한다 — 단, `speechType`
+컬럼 자체는 select에 없어도 무방하다는 점을 확인한다.)
+
+- [ ] **Step 3: 확인**
+
+Run: `cd backend && npx tsc --noEmit`
+Expected: `backend/scripts/report/generate-tables.ts` 관련 타입 에러 없음
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add backend/scripts/report/generate-tables.ts
+git commit -m "feat(report): migrate generate-tables CLI from 8-axis weighted score to 5-KPI columns"
+```
+
+---
+
+## Task 21: 전체 검증 및 파일럿 재처리
 
 **Files:**
 - 없음(검증 전용 태스크)
 
 **Interfaces:**
-- Consumes: Task 1~18의 모든 산출물.
+- Consumes: Task 1~20의 모든 산출물.
 - Produces: 없음.
 
 - [ ] **Step 1: 백엔드 전체 테스트**
