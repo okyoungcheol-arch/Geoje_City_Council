@@ -7,6 +7,7 @@ import { InsightFilters } from "@/components/InsightFilters";
 import { OverviewTab } from "@/components/table1/OverviewTab";
 import { ScoreGridTab } from "@/components/table1/ScoreGridTab";
 import { weightFootnote, meetingShortTitle, type SpeechType } from "@/lib/axes";
+import { MEMBER_ROSTER } from "@/lib/memberRoster";
 import { colors, spacing, typography, radius } from "@/theme/tokens";
 
 type Tab = "overview" | "scores";
@@ -27,7 +28,10 @@ export default function IndexScreen() {
       });
   }, []);
 
-  const members = useMemo(() => [...new Set((rows ?? []).map((r) => r.memberName))].sort(), [rows]);
+  const members = useMemo(
+    () => [...new Set((rows ?? []).map((r) => r.memberName))].filter((m) => MEMBER_ROSTER.has(m)).sort(),
+    [rows]
+  );
   const meetings = useMemo(() => [...new Set((rows ?? []).map((r) => r.meetingTitle))].sort(), [rows]);
 
   const filtered = (rows ?? []).filter(
