@@ -26,7 +26,7 @@ const SelfRaisedIssueSchema = z.object({
   description: z.string().describe("의원이 스스로 제기한, 향후 추적 가능한 구체적 이슈 설명"),
 });
 
-const SummarySchema = z.object({
+export const SummarySchema = z.object({
   summary: z.string().describe("발언의 핵심 내용을 2-3문장으로 요약"),
   tags: z.array(z.string()).min(2).max(4).describe("발언의 핵심 주제를 나타내는 짧은 한국어 태그"),
   isProcedural: z
