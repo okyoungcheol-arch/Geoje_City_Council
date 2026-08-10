@@ -79,6 +79,39 @@ export function groupByMemberMeeting(rows: InsightRow[]): InsightGroup[] {
   });
 }
 
+export interface InsightMemberGroup {
+  memberName: string;
+  /** 이 의원의 모든 회의 대표 발언 중 가중평균이 가장 높은 발언 — 태그/요약/링크 대상으로 쓴다. */
+  representative: InsightRow;
+  /** 이 의원이 발언한 각 회의의 대표 발언 가중평균을 산술평균한 값. */
+  averageScore: number;
+  /** 이 의원이 실질 발언한 회의 수. */
+  meetingCount: number;
+}
+
+/**
+ * 표1 개요(전체 발언 랭킹)의 "전체회의" 보기용: groupByMemberMeeting()이 회의별로 쪼개놓은
+ * 대표 발언들을 의원 단위로 한 번 더 묶어 의원당 1행만 노출한다. 평가점수는 그 의원이 발언한
+ * 회의들의 대표 발언 가중평균을 산술평균한 값이다(회의 하나만 걸러져 있을 때는 그 회의의
+ * 대표 발언 점수와 동일해지므로, 단일 회의 보기에도 그대로 재사용할 수 있다).
+ */
+export function groupByMember(rows: InsightRow[]): InsightMemberGroup[] {
+  const byMember = new Map<string, InsightGroup[]>();
+  for (const group of groupByMemberMeeting(rows)) {
+    const list = byMember.get(group.representative.memberName) ?? [];
+    list.push(group);
+    byMember.set(group.representative.memberName, list);
+  }
+
+  return [...byMember.entries()].map(([memberName, groups]) => {
+    const representative = groups.reduce((best, g) =>
+      g.representative.weightedScore > best.representative.weightedScore ? g : best
+    ).representative;
+    const averageScore = groups.reduce((sum, g) => sum + g.representative.weightedScore, 0) / groups.length;
+    return { memberName, representative, averageScore, meetingCount: groups.length };
+  });
+}
+
 /**
  * 표2 상세 화면용: 대상 발언과, 같은 회의·같은 의원의 다른 발언들(가중평균 내림차순)을
  * 함께 반환한다. 이미 fetchInsights()로 받아온 배열에서 파생하므로 API를 새로 호출하지 않는다.

@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { router } from "expo-router";
-import { groupByMemberMeeting, type InsightGroup, type InsightRow } from "@/lib/api";
+import { groupByMember, type InsightMemberGroup, type InsightRow } from "@/lib/api";
 import { colors, typography, spacing } from "@/theme/tokens";
 
 type SortField = "member" | "tags" | "score";
@@ -15,12 +15,12 @@ const HEADER_LABELS: Record<SortField, string> = {
   score: "평가점수",
 };
 
-function compareGroups(a: InsightGroup, b: InsightGroup, field: SortField): number {
+function compareGroups(a: InsightMemberGroup, b: InsightMemberGroup, field: SortField): number {
   if (field === "score") {
-    return a.representative.weightedScore - b.representative.weightedScore;
+    return a.averageScore - b.averageScore;
   }
   if (field === "member") {
-    return a.representative.memberName.localeCompare(b.representative.memberName, "ko");
+    return a.memberName.localeCompare(b.memberName, "ko");
   }
   return a.representative.tags.join(", ").localeCompare(b.representative.tags.join(", "), "ko");
 }
@@ -33,7 +33,7 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
   const [sort, setSort] = useState<SortState>({ field: "score", direction: "desc" });
 
   const groups = useMemo(() => {
-    const base = groupByMemberMeeting(rows);
+    const base = groupByMember(rows);
     const sorted = [...base].sort((a, b) => compareGroups(a, b, sort.field));
     return sort.direction === "asc" ? sorted : sorted.reverse();
   }, [rows, sort]);
@@ -70,7 +70,7 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
       style={styles.container}
       contentContainerStyle={styles.content}
       data={groups}
-      keyExtractor={(group) => String(group.representative.statementId)}
+      keyExtractor={(group) => group.memberName}
       ListHeaderComponent={header}
       stickyHeaderIndices={[0]}
       renderItem={({ item }) => {
@@ -78,7 +78,7 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
         return (
           <Pressable style={styles.dataRow} onPress={() => router.push(`/statement/${row.statementId}`)}>
             <View style={[styles.cell, styles.memberCell]}>
-              <Text style={styles.memberLabel}>{row.memberName}</Text>
+              <Text style={styles.memberLabel}>{item.memberName}</Text>
             </View>
             <View style={[styles.cell, styles.tagsCell]}>
               <Text style={styles.tagsLabel} numberOfLines={1}>
@@ -86,7 +86,7 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
               </Text>
             </View>
             <View style={[styles.cell, styles.scoreCell]}>
-              <Text style={styles.scoreLabel}>{row.weightedScore.toFixed(2)}</Text>
+              <Text style={styles.scoreLabel}>{item.averageScore.toFixed(2)}</Text>
             </View>
           </Pressable>
         );
