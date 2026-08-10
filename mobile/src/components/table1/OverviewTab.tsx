@@ -2,25 +2,33 @@
 import { useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { router } from "expo-router";
-import { groupByMember, type InsightMemberGroup, type InsightRow } from "@/lib/api";
+import { groupByMemberMeeting, type InsightGroup, type InsightRow } from "@/lib/api";
+import { meetingSessionTitle } from "@/lib/axes";
 import { colors, typography, spacing } from "@/theme/tokens";
 
-type SortField = "member" | "tags" | "score";
+type SortField = "member" | "meeting" | "tags" | "score";
 type SortDirection = "asc" | "desc";
 type SortState = { field: SortField; direction: SortDirection };
 
 const HEADER_LABELS: Record<SortField, string> = {
   member: "의원명",
+  meeting: "회의",
   tags: "태그",
   score: "평가점수",
 };
 
-function compareGroups(a: InsightMemberGroup, b: InsightMemberGroup, field: SortField): number {
+function compareGroups(a: InsightGroup, b: InsightGroup, field: SortField): number {
   if (field === "score") {
-    return a.averageScore - b.averageScore;
+    return a.representative.weightedScore - b.representative.weightedScore;
   }
   if (field === "member") {
-    return a.memberName.localeCompare(b.memberName, "ko");
+    return a.representative.memberName.localeCompare(b.representative.memberName, "ko");
+  }
+  if (field === "meeting") {
+    return meetingSessionTitle(a.representative.meetingTitle).localeCompare(
+      meetingSessionTitle(b.representative.meetingTitle),
+      "ko"
+    );
   }
   return a.representative.tags.join(", ").localeCompare(b.representative.tags.join(", "), "ko");
 }
@@ -33,7 +41,7 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
   const [sort, setSort] = useState<SortState>({ field: "score", direction: "desc" });
 
   const groups = useMemo(() => {
-    const base = groupByMember(rows);
+    const base = groupByMemberMeeting(rows);
     const sorted = [...base].sort((a, b) => compareGroups(a, b, sort.field));
     return sort.direction === "asc" ? sorted : sorted.reverse();
   }, [rows, sort]);
@@ -56,6 +64,9 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
       <Pressable style={[styles.cell, styles.memberCell]} onPress={() => handleHeaderPress("member")}>
         <Text style={styles.headerLabel}>{headerLabel("member")}</Text>
       </Pressable>
+      <Pressable style={[styles.cell, styles.meetingCell]} onPress={() => handleHeaderPress("meeting")}>
+        <Text style={styles.headerLabel}>{headerLabel("meeting")}</Text>
+      </Pressable>
       <Pressable style={[styles.cell, styles.tagsCell]} onPress={() => handleHeaderPress("tags")}>
         <Text style={styles.headerLabel}>{headerLabel("tags")}</Text>
       </Pressable>
@@ -70,7 +81,7 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
       style={styles.container}
       contentContainerStyle={styles.content}
       data={groups}
-      keyExtractor={(group) => group.memberName}
+      keyExtractor={(group) => String(group.representative.statementId)}
       ListHeaderComponent={header}
       stickyHeaderIndices={[0]}
       renderItem={({ item }) => {
@@ -78,7 +89,12 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
         return (
           <Pressable style={styles.dataRow} onPress={() => router.push(`/statement/${row.statementId}`)}>
             <View style={[styles.cell, styles.memberCell]}>
-              <Text style={styles.memberLabel}>{item.memberName}</Text>
+              <Text style={styles.memberLabel}>{row.memberName}</Text>
+            </View>
+            <View style={[styles.cell, styles.meetingCell]}>
+              <Text style={styles.meetingLabel} numberOfLines={1}>
+                {meetingSessionTitle(row.meetingTitle)}
+              </Text>
             </View>
             <View style={[styles.cell, styles.tagsCell]}>
               <Text style={styles.tagsLabel} numberOfLines={1}>
@@ -86,7 +102,7 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
               </Text>
             </View>
             <View style={[styles.cell, styles.scoreCell]}>
-              <Text style={styles.scoreLabel}>{item.averageScore.toFixed(2)}</Text>
+              <Text style={styles.scoreLabel}>{row.weightedScore.toFixed(2)}</Text>
             </View>
           </Pressable>
         );
@@ -115,11 +131,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[8],
     paddingVertical: spacing[8],
   },
-  memberCell: { width: 96 },
+  memberCell: { width: 88 },
+  meetingCell: { width: 104 },
   tagsCell: { flex: 1 },
   scoreCell: { width: 72, alignItems: "flex-end" },
   headerLabel: { ...typography.label2, color: colors.label.alternative },
   memberLabel: { ...typography.label1, color: colors.primary.normal, textDecorationLine: "underline" },
+  meetingLabel: { ...typography.caption1, color: colors.label.neutral },
   tagsLabel: { ...typography.body2, color: colors.label.neutral },
   scoreLabel: { ...typography.headline1, color: colors.primary.normal },
 });
