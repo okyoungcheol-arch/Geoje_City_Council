@@ -1,5 +1,9 @@
 # 거제시의회 의정활동 평가 — 8축 가중평균 루브릭 반영 Design Spec
 
+> **⚠️ 대체됨 (2026-08-11)**: 이 문서가 다루는 8축 가중평균 루브릭은
+> `docs/superpowers/specs/2026-08-11-gjcl-5kpi-rubric-design.md`의 5-KPI 체계로 완전히
+> 대체되었다. 이 문서는 역사적 기록으로만 보존한다.
+
 **Date:** 2026-08-07
 **Status:** Draft (오픈 이슈 §2 해소 전까지 구현 착수 보류)
 **Supersedes(평가 루브릭 한정):** `docs/superpowers/specs/2026-08-06-gjcl-10th-council-insights-design.md`의 5축 채점 방식(학습수준·질의평점·아이디어점수·실행가능성·거제영향도)

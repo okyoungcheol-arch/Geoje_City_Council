@@ -1,5 +1,8 @@
 # 거제시의회 의정활동 평가 — 8축 가중평균 루브릭 구현 계획 (미착수)
 
+> **⚠️ 대체됨 (2026-08-11)**: 이 계획(8축 전환, 미착수 상태로 종료)은
+> `docs/superpowers/plans/2026-08-11-gjcl-5kpi-rubric-plan.md`로 대체되었다.
+
 > **상태**: 계획만 존재, 실행 미착수. `docs/superpowers/specs/2026-08-07-gjcl-member-evaluation-rubric-design.md` §2의 오픈 이슈(5분자유발언 포함 여부)가 해소되기 전까지 Phase A를 시작하지 않는다.
 >
 > **Design spec:** `docs/superpowers/specs/2026-08-07-gjcl-member-evaluation-rubric-design.md`
