@@ -1,15 +1,25 @@
 import { test, expect, vi } from "vitest";
-import { generateObject } from "ai";
+
+vi.mock("ai", () => ({
+  generateObject: vi.fn().mockResolvedValue({
+    object: {
+      summary: "요약",
+      tags: ["태그1", "태그2"],
+      isProcedural: false,
+      speechType: "budget_review",
+      citations: [{ type: "L", text: "지방재정법 제17조 제2항" }],
+      proposals: [{ budget: true, timeline: false, subject: true, method: true }],
+      selfRaisedIssues: [{ description: "보조금 집행 절차 준수 여부 확인 필요" }],
+    },
+  }),
+}));
+
 import { summarizeStatement } from "./summarize";
 
-vi.mock("ai", () => ({ generateObject: vi.fn() }));
+test("returns citations, proposals, selfRaisedIssues alongside existing fields", async () => {
+  const result = await summarizeStatement("발언 원문", "안건명");
 
-test("summarizeStatement returns summary and tags from Sonnet 5", async () => {
-  (generateObject as any).mockResolvedValue({
-    object: { summary: "상습 침수 지역의 배수로 정비 예산 확대를 요구함", tags: ["재해예방", "예산증액"] },
-  });
-
-  const result = await summarizeStatement("존경하는 의장님... 배수로 정비 예산을...");
-  expect(result.summary).toContain("배수로");
-  expect(result.tags).toEqual(["재해예방", "예산증액"]);
+  expect(result.citations).toEqual([{ type: "L", text: "지방재정법 제17조 제2항" }]);
+  expect(result.proposals).toEqual([{ budget: true, timeline: false, subject: true, method: true }]);
+  expect(result.selfRaisedIssues).toEqual([{ description: "보조금 집행 절차 준수 여부 확인 필요" }]);
 });
