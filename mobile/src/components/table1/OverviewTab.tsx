@@ -1,39 +1,92 @@
 // mobile/src/components/table1/OverviewTab.tsx
+import { useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { router } from "expo-router";
-import { groupByMemberMeeting, type InsightRow } from "@/lib/api";
-import { colors, typography, spacing, radius } from "@/theme/tokens";
+import { groupByMemberMeeting, type InsightGroup, type InsightRow } from "@/lib/api";
+import { colors, typography, spacing } from "@/theme/tokens";
+
+type SortField = "member" | "tags" | "score";
+type SortDirection = "asc" | "desc";
+type SortState = { field: SortField; direction: SortDirection };
+
+const HEADER_LABELS: Record<SortField, string> = {
+  member: "의원명",
+  tags: "태그",
+  score: "평가점수",
+};
+
+function compareGroups(a: InsightGroup, b: InsightGroup, field: SortField): number {
+  if (field === "score") {
+    return a.representative.weightedScore - b.representative.weightedScore;
+  }
+  if (field === "member") {
+    return a.representative.memberName.localeCompare(b.representative.memberName, "ko");
+  }
+  return a.representative.tags.join(", ").localeCompare(b.representative.tags.join(", "), "ko");
+}
+
+function defaultDirectionFor(field: SortField): SortDirection {
+  return field === "score" ? "desc" : "asc";
+}
 
 export function OverviewTab({ rows }: { rows: InsightRow[] }) {
-  const groups = groupByMemberMeeting(rows).sort(
-    (a, b) => b.representative.weightedScore - a.representative.weightedScore
+  const [sort, setSort] = useState<SortState>({ field: "score", direction: "desc" });
+
+  const groups = useMemo(() => {
+    const base = groupByMemberMeeting(rows);
+    const sorted = [...base].sort((a, b) => compareGroups(a, b, sort.field));
+    return sort.direction === "asc" ? sorted : sorted.reverse();
+  }, [rows, sort]);
+
+  function handleHeaderPress(field: SortField) {
+    setSort((prev) =>
+      prev.field === field
+        ? { field, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { field, direction: defaultDirectionFor(field) }
+    );
+  }
+
+  function headerLabel(field: SortField) {
+    if (sort.field !== field) return HEADER_LABELS[field];
+    return `${HEADER_LABELS[field]} ${sort.direction === "asc" ? "▲" : "▼"}`;
+  }
+
+  const header = (
+    <View style={styles.headerRow}>
+      <Pressable style={[styles.cell, styles.memberCell]} onPress={() => handleHeaderPress("member")}>
+        <Text style={styles.headerLabel}>{headerLabel("member")}</Text>
+      </Pressable>
+      <Pressable style={[styles.cell, styles.tagsCell]} onPress={() => handleHeaderPress("tags")}>
+        <Text style={styles.headerLabel}>{headerLabel("tags")}</Text>
+      </Pressable>
+      <Pressable style={[styles.cell, styles.scoreCell]} onPress={() => handleHeaderPress("score")}>
+        <Text style={styles.headerLabel}>{headerLabel("score")}</Text>
+      </Pressable>
+    </View>
   );
 
   return (
     <FlatList
-      contentContainerStyle={styles.list}
+      style={styles.container}
+      contentContainerStyle={styles.content}
       data={groups}
       keyExtractor={(group) => String(group.representative.statementId)}
+      ListHeaderComponent={header}
+      stickyHeaderIndices={[0]}
       renderItem={({ item }) => {
         const row = item.representative;
         return (
-          <Pressable style={styles.card} onPress={() => router.push(`/statement/${row.statementId}`)}>
-            <View style={styles.headerRow}>
-              <Text style={styles.member}>{row.memberName}</Text>
-              <Text style={styles.weightedScore}>{row.weightedScore.toFixed(2)}</Text>
+          <Pressable style={styles.dataRow} onPress={() => router.push(`/statement/${row.statementId}`)}>
+            <View style={[styles.cell, styles.memberCell]}>
+              <Text style={styles.memberLabel}>{row.memberName}</Text>
             </View>
-            <Text style={styles.topic}>{row.tags[0] ?? row.summary.slice(0, 24)}</Text>
-            <View style={styles.tagRow}>
-              {row.tags.map((tag) => (
-                <View key={tag} style={styles.tagChip}>
-                  <Text style={styles.tagLabel}>{tag}</Text>
-                </View>
-              ))}
-              {item.siblings.length > 0 && (
-                <View style={styles.siblingChip}>
-                  <Text style={styles.siblingLabel}>이 회의 발언 {item.siblings.length + 1}건</Text>
-                </View>
-              )}
+            <View style={[styles.cell, styles.tagsCell]}>
+              <Text style={styles.tagsLabel} numberOfLines={1}>
+                {row.tags.join(", ")}
+              </Text>
+            </View>
+            <View style={[styles.cell, styles.scoreCell]}>
+              <Text style={styles.scoreLabel}>{row.weightedScore.toFixed(2)}</Text>
             </View>
           </Pressable>
         );
@@ -43,37 +96,30 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
 }
 
 const styles = StyleSheet.create({
-  list: { padding: spacing[12] },
-  card: {
-    padding: spacing[12],
-    borderRadius: radius[8],
-    backgroundColor: colors.background.normal,
-    marginBottom: spacing[10],
-    borderWidth: 1,
-    borderColor: colors.line.solid,
+  container: { flex: 1 },
+  content: { padding: spacing[12] },
+  headerRow: {
+    flexDirection: "row",
+    backgroundColor: colors.background.alternative,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line.solid,
   },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  member: { ...typography.headline1, color: colors.label.normal },
-  weightedScore: { ...typography.headline1, color: colors.primary.normal },
-  topic: { ...typography.body2, color: colors.label.neutral, marginTop: spacing[2] },
-  tagRow: { flexDirection: "row", flexWrap: "wrap", marginTop: spacing[8] },
-  tagChip: {
-    backgroundColor: colors.fill.normal,
-    borderRadius: radius[16],
-    paddingHorizontal: spacing[10],
-    paddingVertical: spacing[4],
-    marginRight: spacing[6],
-    marginBottom: spacing[6],
+  dataRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line.solid,
   },
-  tagLabel: { ...typography.caption1, color: colors.primary.normal },
-  siblingChip: {
-    borderWidth: 1,
-    borderColor: colors.line.solid,
-    borderRadius: radius[16],
-    paddingHorizontal: spacing[10],
-    paddingVertical: spacing[4],
-    marginRight: spacing[6],
-    marginBottom: spacing[6],
+  cell: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing[8],
+    paddingVertical: spacing[8],
   },
-  siblingLabel: { ...typography.caption1, color: colors.label.alternative },
+  memberCell: { width: 96 },
+  tagsCell: { flex: 1 },
+  scoreCell: { width: 72, alignItems: "flex-end" },
+  headerLabel: { ...typography.label2, color: colors.label.alternative },
+  memberLabel: { ...typography.label1, color: colors.label.normal },
+  tagsLabel: { ...typography.body2, color: colors.label.neutral },
+  scoreLabel: { ...typography.headline1, color: colors.primary.normal },
 });

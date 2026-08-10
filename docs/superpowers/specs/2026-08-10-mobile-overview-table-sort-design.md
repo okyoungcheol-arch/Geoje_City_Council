@@ -27,8 +27,8 @@
   - `member`: `memberName.localeCompare(...)`
   - `tags`: `tags.join(", ").localeCompare(...)`
   - `score`: `weightedScore` 숫자 비교
-  - `direction === "asc"`이면 비교 결과 반전.
-- **헤더 탭 동작**: 같은 필드를 다시 탭하면 방향 토글, 다른 필드를 탭하면 해당 필드로 전환하며 방향은 `desc`로 초기화.
+  - `direction === "asc"`이면 오름차순 비교 결과를 그대로, `desc`이면 반전.
+- **헤더 탭 동작**: 같은 필드를 다시 탭하면 방향 토글, 다른 필드를 탭하면 해당 필드로 전환 — 평가점수는 `desc`, 의원명/태그는 `asc`로 초기화.
 - **렌더링**: `FlatList` + `stickyHeaderIndices={[0]}`로 헤더 행을 고정하고 나머지 행만 스크롤.
   - 헤더 행: 3개 `Pressable` 셀(의원명/태그/평가점수). 활성 정렬 컬럼에는 방향 표시(▲/▼)를 라벨 옆에 텍스트로 붙인다.
   - 데이터 행: 기존처럼 `Pressable`로 감싸 탭 시 `/statement/[id]`로 이동(헤더는 이동 없음, 정렬만 동작).
