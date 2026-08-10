@@ -50,7 +50,7 @@ cd mobile && npx expo start               # 앱 로컬 실행 (Expo Go/시뮬레
 - 모델 역할은 고정: 요약/태그 생성 = `anthropic/claude-sonnet-5`, 8개 인사이트 점수(가중평균) = `anthropic/claude-opus-5`. 이 둘을 바꿔 쓰지 않는다.
 - 모든 Anthropic 호출은 **Vercel AI Gateway**를 통해서만 (plain `"provider/model"` 문자열). 직접 `@ai-sdk/anthropic`이나 raw `ANTHROPIC_API_KEY` 사용 금지.
 - 게이트웨이 인증은 기본적으로 **OIDC** (`vercel env pull`이 발급하는 `VERCEL_OIDC_TOKEN`). 수동 `AI_GATEWAY_API_KEY` 발급은 OIDC를 쓸 수 없을 때만.
-- 평점 척도는 8개 축 모두 정수 1~5 (단, 창의성은 예산·결산 심의 발언유형에서, 지속성은 이전 회기 인용 근거가 없는 경우 `null`이 될 수 있다 — `docs/rubric/CLAUDE.md` §3·§4 참조). 최종 점수는 축별 단순평균이 아닌 발언유형별 가중평균이다.
+- 평가지표는 회의록 텍스트만으로 계산 가능한 5개 KPI(근거밀도·대안구체성·추궁심도·답변확보율·이슈지속추적률)이며, 종합 순위점수로 합산하지 않고 항상 독립적으로 표시한다 — `docs/rubric/CLAUDE.md` §3 참조. KPI3(추궁심도)·KPI4(답변확보율)는 해당 발언 직후 질의응답 구조가 없으면 `N/A`, KPI2(대안구체성)는 발언 내 제안이 0건이면 `N/A`, KPI5(이슈지속추적률)는 3회기 미만 이력이면 "추적 중"으로 표기한다.
 - DB는 Postgres (Vercel Marketplace/Neon), `@neondatabase/serverless` + `drizzle-orm/neon-http`, 환경변수 `DATABASE_URL`.
 - 스크래핑은 요청 사이 1~2초 지연, robots.txt 준수. 병렬로 몰아서 요청하지 않는다.
 - 파이프라인은 재실행해도 안전해야 한다 (이미 처리된 `statementId`는 건너뜀).
