@@ -45,6 +45,7 @@ export default function IndexScreen() {
   );
 
   function handleAllMembersTabPress() {
+    if (tab === "allMembers") return;
     setMemberFilter("");
     setMeetingFilter("");
     setTab("allMembers");
