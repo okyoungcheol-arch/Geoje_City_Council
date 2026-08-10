@@ -98,7 +98,12 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: spacing[12] },
-  headerRow: { flexDirection: "row", backgroundColor: colors.background.alternative },
+  headerRow: {
+    flexDirection: "row",
+    backgroundColor: colors.background.alternative,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line.solid,
+  },
   dataRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
