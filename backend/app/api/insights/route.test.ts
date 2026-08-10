@@ -33,6 +33,7 @@ const fixture: InsightRow[] = [
   makeRow({ statementId: 1, meetingTitle: "제264회 임시회 제1차 본회의", memberName: "홍길동", tags: ["재해예방"], kpiEvidenceDensity: 4, kpiCommitmentRate: 0.8 }),
   makeRow({ statementId: 2, meetingTitle: "제265회 정례회 제2차 본회의", memberName: "김철수", tags: ["교육"], kpiEvidenceDensity: 2, kpiCommitmentRate: 0.3 }),
   makeRow({ statementId: 3, meetingTitle: "제264회 임시회 제1차 본회의", memberName: "홍길동", tags: ["복지"], kpiEvidenceDensity: 5, kpiCommitmentRate: 0.9 }),
+  makeRow({ statementId: 4, meetingTitle: "제266회 정례회 제1차 본회의", memberName: "이영희", tags: ["인사"], kpiEvidenceDensity: null, kpiCommitmentRate: 0.7 }),
 ];
 
 vi.mock("@/lib/queries/insights", () => ({
@@ -44,7 +45,7 @@ const { GET } = await import("./route");
 test("no filters returns all rows", async () => {
   const res = await GET(new NextRequest("http://localhost:3000/api/insights"));
   const body = await res.json();
-  expect(body).toHaveLength(3);
+  expect(body).toHaveLength(4);
 });
 
 test("member filter returns only matching member's rows", async () => {
@@ -77,7 +78,7 @@ test("minKpi filter on evidenceDensity returns only rows at or above the thresho
 test("minKpi filter on commitmentRate returns only rows at or above the threshold", async () => {
   const res = await GET(new NextRequest("http://localhost:3000/api/insights?minKpi=commitmentRate&minValue=0.6"));
   const body = await res.json();
-  expect(body).toHaveLength(2);
+  expect(body).toHaveLength(3);
   expect(body.every((r: InsightRow) => r.kpiCommitmentRate !== null && r.kpiCommitmentRate >= 0.6)).toBe(true);
 });
 
@@ -90,6 +91,17 @@ test("combining member and minKpi narrows to the intersection", async () => {
   const body = await res.json();
   expect(body).toHaveLength(2);
   expect(body.every((r: InsightRow) => r.memberName === "홍길동" && r.kpiEvidenceDensity !== null && r.kpiEvidenceDensity >= 4)).toBe(true);
+});
+
+test("minKpi filter correctly excludes rows with null KPI values", async () => {
+  const res = await GET(new NextRequest("http://localhost:3000/api/insights?minKpi=evidenceDensity&minValue=2"));
+  const body = await res.json();
+  // Should return 2 rows (statementIds 1, 2, 3 have non-null values; statementId 4 has null)
+  // StatementId 2 has value 2 (meets threshold), statementId 3 has value 5 (meets threshold),
+  // statementId 1 has value 4 (meets threshold), statementId 4 is excluded (null)
+  expect(body).toHaveLength(3);
+  expect(body.every((r: InsightRow) => r.kpiEvidenceDensity !== null && r.kpiEvidenceDensity >= 2)).toBe(true);
+  expect(body.map((r: InsightRow) => r.statementId).sort()).toEqual([1, 2, 3]);
 });
 
 test("response allows cross-origin requests so the web build can fetch it", async () => {
