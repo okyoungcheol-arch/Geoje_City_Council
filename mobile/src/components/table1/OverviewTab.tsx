@@ -25,6 +25,10 @@ function compareGroups(a: InsightGroup, b: InsightGroup, field: SortField): numb
   return a.representative.tags.join(", ").localeCompare(b.representative.tags.join(", "), "ko");
 }
 
+function defaultDirectionFor(field: SortField): SortDirection {
+  return field === "score" ? "desc" : "asc";
+}
+
 export function OverviewTab({ rows }: { rows: InsightRow[] }) {
   const [sort, setSort] = useState<SortState>({ field: "score", direction: "desc" });
 
@@ -38,7 +42,7 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
     setSort((prev) =>
       prev.field === field
         ? { field, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { field, direction: "desc" }
+        : { field, direction: defaultDirectionFor(field) }
     );
   }
 
