@@ -1,5 +1,9 @@
 # 모바일 앱 8축 실데이터 통합 Implementation Plan
 
+> **⚠️ 대체됨 (2026-08-11)**: 이 계획이 다루는 8축 채점 체계와 그 모바일 통합은
+> `docs/superpowers/plans/2026-08-11-gjcl-5kpi-rubric-plan.md`(Task 14~20)의 5-KPI 모바일 통합으로
+> 완전히 대체되었다. 이 문서는 역사적 기록으로만 보존한다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `mobile/`이 백엔드가 실제로 내려주는 8축 실데이터(`/api/insights`)를 정확한 타입으로 받아, 이미 만들어진 8축 UI(`OverviewTab`/`ScoreGridTab`)로 표1/표2를 렌더링하도록 통합하고, 5축 잔재와 목업 전용 프로토타입 경로를 제거한다.

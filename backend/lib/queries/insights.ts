@@ -36,10 +36,11 @@ export interface InsightRow {
 
 export async function getInsightRows(): Promise<InsightRow[]> {
   // excludedReason IS NULL ⇒ CLAUDE.md §1.2 procedural turns and non-member speakers
-  // never reach this list — they were never scored by Opus 5 in the first place. This
-  // filter guarantees every row returned here has real, non-null Opus 5 scores (except
-  // creativity, which can be legitimately null under the budget_review "―(제외)" weight,
-  // and persistence, which can be legitimately null under pending_future_evaluation).
+  // never reach this list — they were never signal-extracted by Sonnet 5 in the first
+  // place. This filter guarantees every row returned here was a real member statement;
+  // individual KPI values can still be legitimately null (KPI1 evidence density needs a
+  // speech-duration source, KPI2 solution specificity needs at least one proposal, KPI3/4
+  // need `hasQaStructure` — see docs/rubric/CLAUDE.md §3 for the N/A rules per KPI).
   const [rows, meetingsWithAgendaItems] = await Promise.all([
     db
       .select({
