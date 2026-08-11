@@ -86,9 +86,10 @@ export default function IndexScreen() {
           <Text style={styles.disclaimer}>회의를 선택하면 해당 회의의 표1로 전환됩니다.</Text>
         </View>
       )}
-      <Text style={styles.weightExplainer}>
-        가중평균은 발언 유형(5분 이상 발언·예산·결산 심의·행정사무감사·조례 발안 설명)에 따라 8개 채점 항목에 서로
-        다른 가중치를 곱해 합산한 값입니다. 항목별 가중치는 &apos;세부항목&apos; 탭에서 확인할 수 있습니다.
+      <Text style={styles.kpiExplainer}>
+        5개 KPI(근거밀도·대안구체성·추궁심도·답변확보율·이슈지속추적률)는 종합 순위점수 없이 항상 독립적으로
+        표시됩니다. 질의응답 구조가 없는 발언은 추궁심도·답변확보율이 &apos;―&apos;로 표기됩니다. 항목별 값은
+        &apos;세부항목&apos; 탭에서 확인할 수 있습니다.
       </Text>
 
       <View style={styles.tabBar}>
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing[12], paddingTop: spacing[4], paddingBottom: spacing[8] },
   title: { ...typography.headline1, color: colors.label.normal },
   disclaimer: { ...typography.caption1, color: colors.label.alternative, marginTop: spacing[4] },
-  weightExplainer: {
+  kpiExplainer: {
     ...typography.caption2,
     color: colors.label.alternative,
     paddingHorizontal: spacing[12],
