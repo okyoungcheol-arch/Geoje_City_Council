@@ -135,7 +135,9 @@ test("computes KPIs for a substantive statement with no Q&A structure and no ope
       hasQaStructure: false,
       kpiInterrogationDepth: null,
       kpiCommitmentRate: null,
-      kpiEvidenceDensity: null, // speechDurationSec not available yet (see Task 9 Interfaces note)
+      // mockStatement.rawText = "발언 원문" (2어절), 1 citation → 1/2*100 = 50
+      kpiEvidenceDensity: "50",
+      kpiEvidenceDensityGrade: "A",
     })
   );
 });

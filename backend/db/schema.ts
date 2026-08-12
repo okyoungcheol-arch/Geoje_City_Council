@@ -71,7 +71,7 @@ export const statementInsights = pgTable("statement_insights", {
   processedAt: timestamp("processed_at").notNull().defaultNow(),
 });
 
-// KPI⑤(이슈지속추적률)는 의원 누적 단위이므로 statementInsights와 별도로 관리한다.
+// KPI⑤(사후책임성)는 의원 누적 단위이므로 statementInsights와 별도로 관리한다.
 export const issueTickets = pgTable("issue_tickets", {
   id: serial("id").primaryKey(),
   memberId: integer("member_id").notNull().references(() => members.id),
@@ -79,6 +79,7 @@ export const issueTickets = pgTable("issue_tickets", {
   registeredStatementId: integer("registered_statement_id").notNull().references(() => statements.id),
   registeredMeetingId: integer("registered_meeting_id").notNull().references(() => meetings.id),
   status: text("status").notNull().default("open"), // "open" | "resolved"
+  reviewCheckpoint: text("review_checkpoint"), // "다음 정례회"/"착공 후 첫 회기" 등 — 이슈추적사항 탭 표시용, 선택값
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

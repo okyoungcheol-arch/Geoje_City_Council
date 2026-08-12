@@ -30,8 +30,10 @@ function makeRow(overrides: Record<string, unknown>) {
 }
 
 // 회의 A(meetingId 1): 정규화 후 3명(홍길동/임수환/김영규) 발언, agendaItems 있음 -> 포함.
-// 회의 B(meetingId 2): 정규화 후 2명뿐(임수환 중복 표기) -> 3명 미만으로 제외.
-// 회의 C(meetingId 3): 실질 발언 의원 3명 이상이지만 agendaItems가 0건(개회식류) -> 제외.
+// 회의 B(meetingId 2): 정규화 후 1명뿐(임수환 중복 표기가 한 명으로 합쳐짐) -> v2.1부터
+//   MIN_SUBSTANTIVE_MEMBERS_PER_MEETING=1이라 포함(예: 264회 본회의 제2차처럼 5분자유발언
+//   참석자가 많고 안건 토의 참여자가 1명뿐인 회의도 목록에서 사라지지 않아야 한다).
+// 회의 C(meetingId 3): 실질 발언 의원 3명이지만 agendaItems가 0건(개회식류) -> 제외.
 const fixture = [
   makeRow({ statementId: 1, meetingId: 1, meetingTitle: "회의 A", memberName: "홍길동" }),
   makeRow({ statementId: 2, meetingId: 1, meetingTitle: "회의 A", memberName: "임수환" }),
@@ -43,9 +45,7 @@ const fixture = [
   makeRow({ statementId: 8, meetingId: 3, meetingTitle: "회의 C", memberName: "김영규" }),
 ];
 
-// meetingId 1, 2에는 agendaItems가 있음. meetingId 2(회의 B)도 안건은 있지만 3명 미만이라
-// 여전히 제외돼야 하므로, 두 게이트가 서로 독립적으로 동작함을 증명한다.
-// meetingId 3(회의 C)은 agendaItems가 0건(개회식류 시나리오).
+// meetingId 1, 2에는 agendaItems가 있음. meetingId 3(회의 C)은 agendaItems가 0건(개회식류 시나리오).
 const agendaItemMeetingIds = [{ meetingId: 1 }, { meetingId: 2 }];
 
 // getMemberIssuePersistence fixtures — kept separate from the getInsightRows fixture above
@@ -111,14 +111,18 @@ test("a meeting with 3+ members and at least one agenda item is included", async
   expect(meetingA.map((r) => r.memberName).sort()).toEqual(["김영규", "임수환", "홍길동"]);
 });
 
-test("a meeting under the 3-member threshold is excluded regardless of agenda items", async () => {
-  // 회의 B(meetingId 2)는 agendaItemMeetingIds에도 포함돼 있어 안건 게이트는 통과한다 —
-  // 그럼에도 제외된다는 것은 3명 미만 게이트가 안건 게이트와 독립적으로 동작함을 증명한다.
+test("a meeting with only one substantive member after name normalization is still included (v2.1: threshold=1)", async () => {
+  // 회의 B(meetingId 2)는 "임수환"/"부의장 임수환"이 정규화 후 한 명으로 합쳐져 실질 발언
+  // 의원이 1명뿐이지만, MIN_SUBSTANTIVE_MEMBERS_PER_MEETING=1이므로 여전히 포함되어야 한다
+  // — 264회 본회의 제2차처럼 5분자유발언 참석자가 많고 안건 토의 참여자가 1명뿐인 회의가
+  // 통째로 걸러지지 않게 하려는 의도적인 완화다.
   const rows = await getInsightRows();
-  expect(rows.some((r) => r.meetingTitle === "회의 B")).toBe(false);
+  const meetingB = rows.filter((r) => r.meetingTitle === "회의 B");
+  expect(meetingB).toHaveLength(2);
+  expect(meetingB.map((r) => r.memberName)).toEqual(["임수환", "임수환"]);
 });
 
-test("a meeting with 3+ members but zero agendaItems rows is excluded (부의된 안건 게이트)", async () => {
+test("a meeting with 3 members but zero agendaItems rows is excluded (부의된 안건 게이트)", async () => {
   const rows = await getInsightRows();
   expect(rows.some((r) => r.meetingTitle === "회의 C")).toBe(false);
 });

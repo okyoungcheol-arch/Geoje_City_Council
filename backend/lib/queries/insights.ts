@@ -1,14 +1,17 @@
 import { db } from "@/db/client";
 import { meetings, members, statements, statementInsights, agendaItems, issueTickets, issueReviews } from "@/db/schema";
-import { eq, isNull } from "drizzle-orm";
+import { asc, eq, isNull } from "drizzle-orm";
 import { normalizeMemberName } from "@/lib/members/roster";
 import { computeIssuePersistenceGrade, type Grade } from "@/lib/scoring/kpi";
 
-// CLAUDE.md §1.1 "발언자 비율" 원칙의 실체적 적용: 의사진행 발언·비의원 발언만 있어
-// 평가할 내용이 없는 회의, 또는 실질 발언 의원이 소수(1~2명)라 표본으로 의미가 약한 회의는
-// 목록에서 제외한다. 이름 정규화(normalizeMemberName) 이후 집계해야 "부의장 임수환"과
-// "임수환"이 서로 다른 두 명으로 잘못 세지 않는다.
-const MIN_SUBSTANTIVE_MEMBERS_PER_MEETING = 3;
+// CLAUDE.md §1.1 "발언자 비율" 원칙의 실체적 적용: 의사진행 발언·비의원 발언만 있어 평가할
+// 내용이 전혀 없는 회의는 목록에서 제외한다. 이름 정규화(normalizeMemberName) 이후 집계해야
+// "부의장 임수환"과 "임수환"이 서로 다른 두 명으로 잘못 세지 않는다.
+// v2.1(2026-08-12)에서 3→1로 하향: 5분자유발언 참석자가 다수이고 안건 토의 참여자가 실제로
+// 1명뿐인 회의(예: 264회 본회의 제2차)가 통째로 걸러지는 부작용이 있어, "표본이 아예 없는
+// 회의만 제외"로 게이트를 완화했다. 표본이 1명뿐인 회의를 회의 간 비교에 쓸 때는 그 한계를
+// 감안해야 한다.
+const MIN_SUBSTANTIVE_MEMBERS_PER_MEETING = 1;
 
 export interface InsightRow {
   statementId: number;
@@ -165,4 +168,36 @@ export async function getMemberIssuePersistence(): Promise<MemberIssuePersistenc
     const rate = Math.round((entry.reviewed / entry.total) * 100) / 100;
     return { memberName, totalIssues: entry.total, reviewedIssues: entry.reviewed, rate, grade: computeIssuePersistenceGrade(rate), status: "scored" as const };
   });
+}
+
+export interface OpenIssueTicket {
+  id: number;
+  memberName: string;
+  description: string;
+  reviewCheckpoint: string | null;
+  status: string;
+  registeredStatementId: number;
+}
+
+/**
+ * "이슈추적사항" 탭용 — 아직 재검토되지 않은(open) 이슈 티켓을 의원명 정규화해서 반환한다.
+ * KPI5(사후책임성)의 의원 단위 집계(getMemberIssuePersistence)와 달리, 이건 개별 티켓의
+ * 정적 목록이다.
+ */
+export async function getOpenIssueTickets(): Promise<OpenIssueTicket[]> {
+  const rows = await db
+    .select({
+      id: issueTickets.id,
+      memberName: members.name,
+      description: issueTickets.description,
+      reviewCheckpoint: issueTickets.reviewCheckpoint,
+      status: issueTickets.status,
+      registeredStatementId: issueTickets.registeredStatementId,
+    })
+    .from(issueTickets)
+    .innerJoin(members, eq(issueTickets.memberId, members.id))
+    .where(eq(issueTickets.status, "open"))
+    .orderBy(asc(issueTickets.id));
+
+  return rows.map((r) => ({ ...r, memberName: normalizeMemberName(r.memberName) }));
 }

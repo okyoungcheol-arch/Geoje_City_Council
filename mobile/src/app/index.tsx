@@ -6,12 +6,12 @@ import { fetchInsights, type InsightRow } from "@/lib/api";
 import { InsightFilters } from "@/components/InsightFilters";
 import { OverviewTab } from "@/components/table1/OverviewTab";
 import { ScoreGridTab } from "@/components/table1/ScoreGridTab";
-import { AllMembersRankingTab } from "@/components/table1/AllMembersRankingTab";
+import { IssueTrackingTab } from "@/components/table1/IssueTrackingTab";
 import { meetingShortTitle } from "@/lib/kpis";
 import { MEMBER_ROSTER } from "@/lib/memberRoster";
 import { colors, spacing, typography, radius } from "@/theme/tokens";
 
-type Tab = "overview" | "scores" | "allMembers";
+type Tab = "overview" | "scores" | "issueTracking";
 
 export default function IndexScreen() {
   const [rows, setRows] = useState<InsightRow[] | null>(null);
@@ -39,11 +39,11 @@ export default function IndexScreen() {
     (r) => (!memberFilter || r.memberName === memberFilter) && (!meetingFilter || r.meetingTitle === meetingFilter)
   );
 
-  function handleAllMembersTabPress() {
-    if (tab === "allMembers") return;
+  function handleIssueTrackingTabPress() {
+    if (tab === "issueTracking") return;
     setMemberFilter("");
     setMeetingFilter("");
-    setTab("allMembers");
+    setTab("issueTracking");
   }
 
   if (!rows) {
@@ -71,10 +71,12 @@ export default function IndexScreen() {
         </Pressable>
       </View>
 
-      {tab === "allMembers" ? (
+      {tab === "issueTracking" ? (
         <View style={styles.header}>
-          <Text style={styles.title}>전체의원 랭킹</Text>
-          <Text style={styles.disclaimer}>의원별로 참여한 모든 회의의 평가점수를 산술평균한 값입니다.</Text>
+          <Text style={styles.title}>이슈추적사항</Text>
+          <Text style={styles.disclaimer}>
+            의원이 회의 중 제기했지만 아직 재검토되지 않은 사안입니다. 다음 확인 시점까지 지켜봐야 합니다.
+          </Text>
         </View>
       ) : meetingFilter ? (
         <View style={styles.header}>
@@ -87,8 +89,8 @@ export default function IndexScreen() {
         </View>
       )}
       <Text style={styles.kpiExplainer}>
-        5개 KPI(근거밀도·대안구체성·추궁심도·답변확보율·이슈지속추적률)는 종합 순위점수 없이 항상 독립적으로
-        표시됩니다. 질의응답 구조가 없는 발언은 추궁심도·답변확보율이 &apos;―&apos;로 표기됩니다. 항목별 값은
+        5개 KPI(사전준비도·정책생산력·실시간 압박력·성과전환력·사후책임성)는 종합 순위점수 없이 항상 독립적으로
+        표시됩니다. 질의응답 구조가 없는 발언은 실시간 압박력·성과전환력이 &apos;―&apos;로 표기됩니다. 항목별 값은
         &apos;세부항목&apos; 탭에서 확인할 수 있습니다.
       </Text>
 
@@ -99,12 +101,14 @@ export default function IndexScreen() {
         <Pressable style={[styles.tabButton, tab === "scores" && styles.tabButtonActive]} onPress={() => setTab("scores")}>
           <Text style={[styles.tabLabel, tab === "scores" && styles.tabLabelActive]}>세부항목</Text>
         </Pressable>
-        <Pressable style={[styles.tabButton, tab === "allMembers" && styles.tabButtonActive]} onPress={handleAllMembersTabPress}>
-          <Text style={[styles.tabLabel, tab === "allMembers" && styles.tabLabelActive]}>전체의원랭킹</Text>
+        <Pressable style={[styles.tabButton, tab === "issueTracking" && styles.tabButtonActive]} onPress={handleIssueTrackingTabPress}>
+          <Text style={[styles.tabLabel, tab === "issueTracking" && styles.tabLabelActive]}>이슈추적사항</Text>
         </Pressable>
       </View>
 
-      {fetchFailed ? (
+      {tab === "issueTracking" ? (
+        <IssueTrackingTab />
+      ) : fetchFailed ? (
         <View style={styles.center}>
           <Text style={styles.body}>데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</Text>
         </View>
@@ -114,8 +118,6 @@ export default function IndexScreen() {
         </View>
       ) : tab === "overview" ? (
         <OverviewTab rows={filtered} />
-      ) : tab === "allMembers" ? (
-        <AllMembersRankingTab rows={filtered} />
       ) : (
         <ScoreGridTab rows={filtered} />
       )}

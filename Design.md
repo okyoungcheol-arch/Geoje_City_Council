@@ -11,7 +11,7 @@
 제10대 회의(5분자유발언 제외)를 대상으로:
 
 1. 의원별 발언(회의록 텍스트)에서 **Sonnet 5**로 구조화 신호(요약·태그·인용·제안요소·질의응답 왕복·자기제기 이슈)를 추출
-2. 순수 코드로 **5개 KPI**를 계산: **근거밀도 · 대안구체성 · 추궁심도 · 답변확보율 · 이슈지속추적률** (**Opus 5**는 이슈지속추적률의 회기간 매칭 판단에만 사용, 자세한 계약은 [agent.md](agent.md))
+2. 순수 코드로 **5개 KPI**를 계산: **사전준비도 · 정책생산력 · 실시간 압박력 · 성과전환력 · 사후책임성** (**Opus 5**는 사후책임성의 회기간 매칭 판단에만 사용, 자세한 계약은 [agent.md](agent.md))
 3. 결과를 **모바일 앱**(iOS/Android, React Native + Expo)에서 표/카드 형태로 제공
 4. 태그를 탭하면 해당 발언의 **회의록 원문**으로 이동 (v1에 있었던 "영상으로 이동" 기능은 폐기됨)
 
@@ -24,10 +24,10 @@ gjcl.go.kr
 backend/  Next.js API, Vercel 배포
    │  Postgres (Neon) ── meetings / members / agenda_items / statements / statement_insights / issueTickets / issueReviews
    │  AI 파이프라인: Sonnet 5 (신호 추출) → 순수 코드 (KPI1~4 계산) → Opus 5 (이슈 매칭, 미해결 티켓 있을 때만)
-   │  GET /api/insights (필터: member, meeting, minKpi+minValue), GET /api/issue-persistence
+   │  GET /api/insights (필터: member, meeting, minKpi+minValue), GET /api/issue-persistence, GET /api/issue-tickets
    ▼
 mobile/  React Native + Expo 앱
-   목록 화면 (표/카드 + 태그 칩) → 태그 탭 → 발언 상세 화면 (회의록 원문 + 요약 + 5개 KPI + 인용/제안/질의응답/이슈 근거)
+   목록 화면 (표/카드 + 태그 칩, 이슈추적사항 탭) → 태그 탭 → 발언 상세 화면 (회의록 원문 + 요약 + 5개 KPI + 인용/제안/질의응답/이슈 근거)
 ```
 
 `backend/`와 `mobile/`은 완전히 분리된 두 프로젝트다. 모바일 앱은 DB에 직접 접근하지 않고 오직 `/api/insights`만 호출한다.
@@ -43,13 +43,16 @@ mobile/  React Native + Expo 앱
 | 회의 제목 | `meetings.title` |
 | 의원명 | `members.name` |
 | 주요발언 태그 | `statement_insights.tags[]` — 탭하면 회의록 원문 화면으로 이동 |
-| 근거밀도 | 값 + 등급(A~D), 발언시간 데이터 없으면 N/A |
-| 대안구체성 | 0~4 평균값, 제안 0건이면 N/A |
-| 추궁심도 | 값 + 재질의율, 질의응답 구조 없으면 N/A |
-| 답변확보율 | 0~1 비율, 질의응답 구조 없으면 N/A |
-| 이슈지속추적률 | 의원 누적 비율 + 등급(A~D), 3회기 미만 이력이면 "추적 중" |
+| 사전준비도 | 값 + 등급(A~D), 발언 어절수 데이터 없으면 N/A |
+| 정책생산력 | 0~4 평균값, 대안 0건이면 N/A |
+| 실시간 압박력 | 값(왕복 턴 수) + 재질의율, 질의응답 구조 없으면 N/A |
+| 성과전환력 | 0~1 비율, 질의응답 구조 없으면 N/A |
+| 사후책임성 | 의원 누적 비율 + 등급(A~D), 3회기 미만 이력이면 "추적 중" |
 
 5개 KPI는 종합 순위점수로 합산하지 않고 항상 독립적으로 표시한다 — 산식·등급 경계값은 [docs/rubric/CLAUDE.md](docs/rubric/CLAUDE.md) §3 참조.
+
+모바일 앱의 "이슈추적사항" 탭은 사후책임성의 원재료인 `issueTickets`(아직 재검토되지 않은 open 상태) 목록을
+의원·등록 사안·확인 시점(`reviewCheckpoint`) 컬럼으로 그대로 보여준다 — `/api/issue-tickets` 참조.
 
 ## v1 → v2 변경 이력
 

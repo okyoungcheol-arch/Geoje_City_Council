@@ -4,7 +4,7 @@ import { hasQaStructure, extractQaRounds, QaRoundSchema } from "./extractQaRound
 // Mock ai module before any imports
 vi.mock("ai", () => ({
   generateObject: vi.fn().mockResolvedValue({
-    object: { rounds: [{ roundIndex: 0, answerGrade: "회피", bonusTags: ["회피차단"] }] },
+    object: { rounds: [{ roundIndex: 0, answerGrade: "회피", bonusTags: ["쟁점고정"] }] },
   }),
 }));
 
@@ -24,7 +24,7 @@ test("returns false for an empty list (last statement in the meeting)", () => {
 // Tests for extractQaRounds
 test("extractQaRounds returns classified rounds from the mocked model", async () => {
   const rounds = await extractQaRounds("보조금 집행 절차를 준수했습니까?", ["검토하겠습니다."]);
-  expect(rounds).toEqual([{ roundIndex: 0, answerGrade: "회피", bonusTags: ["회피차단"] }]);
+  expect(rounds).toEqual([{ roundIndex: 0, answerGrade: "회피", bonusTags: ["쟁점고정"] }]);
 });
 
 // Schema validation tests for QaRoundSchema
@@ -80,7 +80,7 @@ test("QaRoundSchema accepts all valid answerGrade values", () => {
 });
 
 test("QaRoundSchema accepts all valid bonusTag values", () => {
-  const tags = ["모순포착", "패턴제시", "회피차단", "법근거제시"];
+  const tags = ["모순포착", "패턴제시", "쟁점고정", "법근거제시"];
   const result = QaRoundSchema.safeParse({
     roundIndex: 0,
     answerGrade: "확답",

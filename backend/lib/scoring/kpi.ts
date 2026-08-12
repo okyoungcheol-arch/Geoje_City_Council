@@ -10,13 +10,13 @@ function densityGrade(value: number): Grade {
   return "D";
 }
 
-/** docs/rubric/CLAUDE.md §3① — 발언시간이 없으면 근사하지 않고 N/A. */
+/** docs/rubric/CLAUDE.md §3① — 발언 어절수가 없으면 근사하지 않고 N/A. */
 export function computeEvidenceDensity(
   citations: Citation[],
-  speechDurationSec: number | null
+  wordCount: number | null
 ): { value: number | null; grade: Grade | null } {
-  if (speechDurationSec === null || speechDurationSec === 0) return { value: null, grade: null };
-  const value = (citations.length / speechDurationSec) * 100;
+  if (wordCount === null || wordCount === 0) return { value: null, grade: null };
+  const value = (citations.length / wordCount) * 100;
   return { value: Math.round(value * 100) / 100, grade: densityGrade(value) };
 }
 
@@ -30,24 +30,14 @@ export function computeSolutionSpecificity(proposals: Proposal[]): number | null
   return Math.round((total / proposals.length) * 100) / 100;
 }
 
-const BONUS_TAG_WEIGHT: Record<string, number> = {
-  모순포착: 1.0,
-  패턴제시: 1.0,
-  회피차단: 0.5,
-  법근거제시: 0.5,
-};
-
-/** docs/rubric/CLAUDE.md §3③ — 질의응답 구조 없으면(rounds 빈 배열) N/A. */
+/** docs/rubric/CLAUDE.md §3③ — 질의응답 구조 없으면(rounds 빈 배열) N/A.
+ * v2.1: 추궁깊이 = 왕복 턴 수 그대로(가산 미포함). 재질의율 = 해당 질의가 재질의로
+ * 이어졌는지 여부(0/1) — 왕복이 2턴 이상이면 재질의가 있었다는 뜻. */
 export function computeInterrogationDepth(qaRounds: QaRound[]): { value: number; reQuestionRate: number } | null {
   if (qaRounds.length === 0) return null;
-  const bonus = qaRounds.reduce(
-    (sum, r) => sum + r.bonusTags.reduce((s, tag) => s + (BONUS_TAG_WEIGHT[tag] ?? 0), 0),
-    0
-  );
-  const reQuestioned = Math.max(qaRounds.length - 1, 0); // round 0 is the initial question; rounds after it are re-questions
   return {
-    value: Math.round((qaRounds.length + bonus) * 100) / 100,
-    reQuestionRate: Math.round(reQuestioned * 100) / 100,
+    value: qaRounds.length,
+    reQuestionRate: qaRounds.length > 1 ? 1 : 0,
   };
 }
 

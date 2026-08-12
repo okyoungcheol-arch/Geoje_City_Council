@@ -7,7 +7,7 @@ import {
   computeIssuePersistenceGrade,
 } from "./kpi";
 
-test("computeEvidenceDensity: 4 citations over 100s = 4.0 density, grade A", () => {
+test("computeEvidenceDensity: 4 citations over 100 words = 4.0 density, grade A", () => {
   const citations = [
     { type: "L" as const, text: "a" },
     { type: "S" as const, text: "b" },
@@ -60,7 +60,7 @@ test("computeEvidenceDensity: exact boundary values (>= thresholds)", () => {
   expect(densityBelowC.grade).toBe("D");
 });
 
-test("computeEvidenceDensity: null speech duration returns null (not approximated)", () => {
+test("computeEvidenceDensity: null word count returns null (not approximated)", () => {
   expect(computeEvidenceDensity([{ type: "L", text: "a" }], null)).toEqual({ value: null, grade: null });
 });
 
@@ -76,14 +76,33 @@ test("computeSolutionSpecificity: no proposals returns null (N/A, not 0)", () =>
   expect(computeSolutionSpecificity([])).toBeNull();
 });
 
-test("computeInterrogationDepth: 2 rounds, one bonus tag", () => {
+test("computeInterrogationDepth: 2 rounds, bonus tags are descriptive only (not summed into value)", () => {
   const rounds = [
-    { roundIndex: 0, answerGrade: "회피" as const, bonusTags: ["회피차단"] },
+    { roundIndex: 0, answerGrade: "회피" as const, bonusTags: ["쟁점고정"] },
     { roundIndex: 1, answerGrade: "확답" as const, bonusTags: [] },
   ];
   const result = computeInterrogationDepth(rounds);
-  expect(result?.value).toBe(2.5); // 2 rounds + 0.5 bonus
-  expect(result?.reQuestionRate).toBe(1); // 2 rounds / 1 question(round 0's re-question is round 1)
+  expect(result?.value).toBe(2); // 왕복 턴 수 그대로, 가산 미포함
+  expect(result?.reQuestionRate).toBe(1); // 2턴 이상이므로 재질의 있었음
+});
+
+test("computeInterrogationDepth: single round has no re-question", () => {
+  const rounds = [{ roundIndex: 0, answerGrade: "확답" as const, bonusTags: [] }];
+  const result = computeInterrogationDepth(rounds);
+  expect(result?.value).toBe(1);
+  expect(result?.reQuestionRate).toBe(0);
+});
+
+test("computeInterrogationDepth: 4 rounds with all bonus tags (264회 최양희 실측 사례)", () => {
+  const rounds = [
+    { roundIndex: 0, answerGrade: "회피" as const, bonusTags: ["모순포착"] },
+    { roundIndex: 1, answerGrade: "회피" as const, bonusTags: ["패턴제시"] },
+    { roundIndex: 2, answerGrade: "회피" as const, bonusTags: ["쟁점고정"] },
+    { roundIndex: 3, answerGrade: "회피" as const, bonusTags: ["법근거제시"] },
+  ];
+  const result = computeInterrogationDepth(rounds);
+  expect(result?.value).toBe(4);
+  expect(result?.reQuestionRate).toBe(1);
 });
 
 test("computeInterrogationDepth: no rounds (no Q&A structure) returns null", () => {

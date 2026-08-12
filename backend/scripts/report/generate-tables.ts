@@ -51,7 +51,7 @@ async function main() {
   for (const [, meetingRows] of byMeeting) {
     const title = meetingRows[0].meetingTitle.split("\n")[0].trim();
     console.log(`\n### 표1. ${title}\n`);
-    console.log("| 의원 | 주제 | 태그(주요발언) | 향후 감시할 주제 | 근거밀도 | 대안구체성 | 추궁심도 | 답변확보율 |");
+    console.log("| 의원 | 주제 | 태그(주요발언) | 향후 감시할 주제 | 사전준비도 | 정책생산력 | 실시간 압박력 | 성과전환력 |");
     console.log("|---|---|---|---|:--:|:--:|:--:|:--:|");
 
     for (const r of meetingRows) {

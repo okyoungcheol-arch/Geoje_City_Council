@@ -129,10 +129,11 @@ export async function processOneStatement(statementId: number): Promise<ProcessR
     const qaStructurePresent = hasQaStructure(speakerNames);
     const qaRounds = qaStructurePresent ? await withRetry(() => extractQaRounds(stmt.rawText, answerTexts)) : [];
 
-    // TODO: speechDurationSec is not yet captured by the scraper (backend/scripts/scrape/minutes.ts) —
-    // wire this up once that data is available. Until then, KPI1 (근거밀도) is always N/A.
-    const speechDurationSec: number | null = null;
-    const evidenceDensity = computeEvidenceDensity(citations, speechDurationSec);
+    // docs/rubric/CLAUDE.md §3① — 사전준비도 분모는 발언 어절수. 의례적 인사말을 완전히 걸러내진
+    // 못하는 알려진 근사이지만, 공백 분리 어절수는 rawText만으로 항상 계산 가능하다.
+    const trimmed = stmt.rawText.trim();
+    const wordCount = trimmed.length > 0 ? trimmed.split(/\s+/).filter(Boolean).length : null;
+    const evidenceDensity = computeEvidenceDensity(citations, wordCount);
     const solutionSpecificity = computeSolutionSpecificity(proposals);
     const interrogationDepth = computeInterrogationDepth(qaRounds);
     const commitmentRate = computeCommitmentRate(qaRounds);

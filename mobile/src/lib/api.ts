@@ -93,51 +93,10 @@ export function groupByMemberMeeting(rows: InsightRow[], kpi: Kpi = "evidenceDen
   });
 }
 
-export interface InsightMemberGroup {
-  memberName: string;
-  /** 이 의원의 모든 회의 대표 발언 중 primaryKpi가 가장 높은 발언 — 태그/요약/링크 대상으로 쓴다. */
-  representative: InsightRow;
-  /** KPI별로, 이 의원이 발언한 각 회의 대표 발언의 non-null 값만 평균한 값. */
-  kpiAverages: Partial<Record<Kpi, number>>;
-  /** 이 의원이 실질 발언한 회의 수. */
-  meetingCount: number;
-}
-
 /**
- * 표1 개요(전체 발언 랭킹)의 "전체회의" 보기용: groupByMemberMeeting()이 회의별로 쪼개놓은
- * 대표 발언들을 의원 단위로 한 번 더 묶어 의원당 1행만 노출한다. kpiAverages는 KPI마다
- * null이 아닌 값만 평균한 값이다(회의 하나만 걸러져 있을 때는 그 회의의 대표 발언 값과
- * 동일해지므로, 단일 회의 보기에도 그대로 재사용할 수 있다).
- */
-export function groupByMember(rows: InsightRow[], primaryKpi: Kpi = "evidenceDensity"): InsightMemberGroup[] {
-  const byMember = new Map<string, InsightGroup[]>();
-  for (const group of groupByMemberMeeting(rows, primaryKpi)) {
-    const list = byMember.get(group.representative.memberName) ?? [];
-    list.push(group);
-    byMember.set(group.representative.memberName, list);
-  }
-
-  return [...byMember.entries()].map(([memberName, groups]) => {
-    const representative = groups.reduce((best, g) =>
-      kpiValue(g.representative, primaryKpi) > kpiValue(best.representative, primaryKpi) ? g : best
-    ).representative;
-
-    const kpiAverages: Partial<Record<Kpi, number>> = {};
-    for (const kpi of Object.keys(KPI_FIELD) as Kpi[]) {
-      const values = groups
-        .map((g) => g.representative[KPI_FIELD[kpi]] as number | null)
-        .filter((v): v is number => v !== null);
-      if (values.length > 0) kpiAverages[kpi] = Math.round((values.reduce((s, v) => s + v, 0) / values.length) * 100) / 100;
-    }
-
-    return { memberName, representative, kpiAverages, meetingCount: groups.length };
-  });
-}
-
-/**
- * 표2 상세 화면용: 대상 발언과, 같은 회의·같은 의원의 다른 발언들(근거밀도 내림차순)을
+ * 표2 상세 화면용: 대상 발언과, 같은 회의·같은 의원의 다른 발언들(사전준비도 내림차순)을
  * 함께 반환한다. 이미 fetchInsights()로 받아온 배열에서 파생하므로 API를 새로 호출하지 않는다.
- * 상세화면에서는 어차피 모든 KPI를 다 보여주므로 정렬 기준은 항상 근거밀도로 고정한다.
+ * 상세화면에서는 어차피 모든 KPI를 다 보여주므로 정렬 기준은 항상 사전준비도로 고정한다.
  */
 export async function fetchInsightWithSiblings(
   id: number
@@ -166,5 +125,22 @@ export async function fetchIssuePersistence(): Promise<MemberIssuePersistence[]>
   const base = process.env.EXPO_PUBLIC_API_BASE_URL;
   const res = await fetch(`${base}/api/issue-persistence`);
   if (!res.ok) throw new Error(`Failed to fetch issue persistence: ${res.status}`);
+  return res.json();
+}
+
+export interface IssueTicket {
+  id: number;
+  memberName: string;
+  description: string;
+  reviewCheckpoint: string | null;
+  status: string;
+  registeredStatementId: number;
+}
+
+/** "이슈추적사항" 탭용 — 아직 재검토되지 않은(open) 이슈 티켓 목록. */
+export async function fetchIssueTickets(): Promise<IssueTicket[]> {
+  const base = process.env.EXPO_PUBLIC_API_BASE_URL;
+  const res = await fetch(`${base}/api/issue-tickets`);
+  if (!res.ok) throw new Error(`Failed to fetch issue tickets: ${res.status}`);
   return res.json();
 }

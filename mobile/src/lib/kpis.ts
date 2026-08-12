@@ -11,10 +11,10 @@ export type Kpi = "evidenceDensity" | "solutionSpecificity" | "interrogationDept
 export const KPIS: Kpi[] = ["evidenceDensity", "solutionSpecificity", "interrogationDepth", "commitmentRate"];
 
 export const KPI_LABELS: Record<Kpi, string> = {
-  evidenceDensity: "근거밀도",
-  solutionSpecificity: "대안구체성",
-  interrogationDepth: "추궁심도",
-  commitmentRate: "답변확보율",
+  evidenceDensity: "사전준비도",
+  solutionSpecificity: "정책생산력",
+  interrogationDepth: "실시간 압박력",
+  commitmentRate: "성과전환력",
 };
 
 const KPI_FIELD: Record<Kpi, keyof InsightRow> = {

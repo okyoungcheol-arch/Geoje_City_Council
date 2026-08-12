@@ -9,10 +9,10 @@ type Kpi = "kpiEvidenceDensity" | "kpiSolutionSpecificity" | "kpiInterrogationDe
 const KPIS: Kpi[] = ["kpiEvidenceDensity", "kpiSolutionSpecificity", "kpiInterrogationDepth", "kpiCommitmentRate"];
 
 const KPI_LABELS: Record<Kpi, string> = {
-  kpiEvidenceDensity: "근거밀도",
-  kpiSolutionSpecificity: "대안구체성",
-  kpiInterrogationDepth: "추궁심도",
-  kpiCommitmentRate: "답변확보율",
+  kpiEvidenceDensity: "사전준비도",
+  kpiSolutionSpecificity: "정책생산력",
+  kpiInterrogationDepth: "실시간 압박력",
+  kpiCommitmentRate: "성과전환력",
 };
 
 function meetingShortTitle(fullTitle: string): string {
