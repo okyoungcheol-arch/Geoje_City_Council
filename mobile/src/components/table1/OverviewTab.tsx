@@ -3,10 +3,10 @@ import { useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { router } from "expo-router";
 import { groupByMemberMeeting, type InsightGroup, type InsightRow } from "@/lib/api";
-import { meetingSessionTitle } from "@/lib/axes";
-import { colors, typography, spacing } from "@/theme/tokens";
+import { KPIS, KPI_LABELS, kpiCellLabel, meetingSessionTitle, type Kpi } from "@/lib/kpis";
+import { colors, typography, spacing, radius } from "@/theme/tokens";
 
-type SortField = "member" | "meeting" | "tags" | "score";
+type SortField = "member" | "meeting" | "tags" | Kpi;
 type SortDirection = "asc" | "desc";
 type SortState = { field: SortField; direction: SortDirection };
 
@@ -14,12 +14,22 @@ const HEADER_LABELS: Record<SortField, string> = {
   member: "의원명",
   meeting: "회의",
   tags: "태그",
-  score: "평가점수",
+  ...KPI_LABELS,
 };
 
+function isKpiField(field: SortField): field is Kpi {
+  return (KPIS as string[]).includes(field);
+}
+
 function compareGroups(a: InsightGroup, b: InsightGroup, field: SortField): number {
-  if (field === "score") {
-    return a.representative.weightedScore - b.representative.weightedScore;
+  if (isKpiField(field)) {
+    const av = kpiCellLabel(a.representative, field);
+    const bv = kpiCellLabel(b.representative, field);
+    // N/A("―")는 항상 최하위로 취급 — 숫자 비교 전에 걸러낸다.
+    if (av === "―" && bv === "―") return 0;
+    if (av === "―") return -1;
+    if (bv === "―") return 1;
+    return parseFloat(av) - parseFloat(bv);
   }
   if (field === "member") {
     return a.representative.memberName.localeCompare(b.representative.memberName, "ko");
@@ -33,24 +43,22 @@ function compareGroups(a: InsightGroup, b: InsightGroup, field: SortField): numb
   return a.representative.tags.join(", ").localeCompare(b.representative.tags.join(", "), "ko");
 }
 
-function defaultDirectionFor(field: SortField): SortDirection {
-  return field === "score" ? "desc" : "asc";
-}
-
 export function OverviewTab({ rows }: { rows: InsightRow[] }) {
-  const [sort, setSort] = useState<SortState>({ field: "score", direction: "desc" });
+  const [activeKpi, setActiveKpi] = useState<Kpi>("evidenceDensity");
+  const [sort, setSort] = useState<SortState>({ field: "evidenceDensity", direction: "desc" });
 
   const groups = useMemo(() => {
-    const base = groupByMemberMeeting(rows);
+    const base = groupByMemberMeeting(rows, activeKpi);
     const sorted = [...base].sort((a, b) => compareGroups(a, b, sort.field));
     return sort.direction === "asc" ? sorted : sorted.reverse();
-  }, [rows, sort]);
+  }, [rows, sort, activeKpi]);
 
   function handleHeaderPress(field: SortField) {
+    if (isKpiField(field)) setActiveKpi(field);
     setSort((prev) =>
       prev.field === field
         ? { field, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { field, direction: defaultDirectionFor(field) }
+        : { field, direction: field === "member" || field === "tags" ? "asc" : "desc" }
     );
   }
 
@@ -70,50 +78,74 @@ export function OverviewTab({ rows }: { rows: InsightRow[] }) {
       <Pressable style={[styles.cell, styles.tagsCell]} onPress={() => handleHeaderPress("tags")}>
         <Text style={styles.headerLabel}>{headerLabel("tags")}</Text>
       </Pressable>
-      <Pressable style={[styles.cell, styles.scoreCell]} onPress={() => handleHeaderPress("score")}>
-        <Text style={styles.headerLabel}>{headerLabel("score")}</Text>
+      <Pressable style={[styles.cell, styles.scoreCell]} onPress={() => handleHeaderPress(activeKpi)}>
+        <Text style={styles.headerLabel}>{headerLabel(activeKpi)}</Text>
       </Pressable>
     </View>
   );
 
   return (
-    <FlatList
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      data={groups}
-      keyExtractor={(group) => String(group.representative.statementId)}
-      ListHeaderComponent={header}
-      stickyHeaderIndices={[0]}
-      renderItem={({ item }) => {
-        const row = item.representative;
-        return (
-          <Pressable style={styles.dataRow} onPress={() => router.push(`/statement/${row.statementId}`)}>
-            <View style={[styles.cell, styles.memberCell]}>
-              <Text style={styles.memberLabel}>{row.memberName}</Text>
-            </View>
-            <View style={[styles.cell, styles.meetingCell]}>
-              <Text style={styles.meetingLabel} numberOfLines={1}>
-                {meetingSessionTitle(row.meetingTitle)}
-              </Text>
-            </View>
-            <View style={[styles.cell, styles.tagsCell]}>
-              <Text style={styles.tagsLabel} numberOfLines={1}>
-                {row.tags.join(", ")}
-              </Text>
-            </View>
-            <View style={[styles.cell, styles.scoreCell]}>
-              <Text style={styles.scoreLabel}>{row.weightedScore.toFixed(2)}</Text>
-            </View>
+    <View style={styles.container}>
+      <View style={styles.kpiSelectorRow}>
+        {KPIS.map((kpi) => (
+          <Pressable
+            key={kpi}
+            style={[styles.kpiChip, activeKpi === kpi && styles.kpiChipActive]}
+            onPress={() => handleHeaderPress(kpi)}
+          >
+            <Text style={[styles.kpiChipLabel, activeKpi === kpi && styles.kpiChipLabelActive]}>{KPI_LABELS[kpi]}</Text>
           </Pressable>
-        );
-      }}
-    />
+        ))}
+      </View>
+      <FlatList
+        style={styles.list}
+        contentContainerStyle={styles.content}
+        data={groups}
+        keyExtractor={(group) => String(group.representative.statementId)}
+        ListHeaderComponent={header}
+        stickyHeaderIndices={[0]}
+        renderItem={({ item }) => {
+          const row = item.representative;
+          return (
+            <Pressable style={styles.dataRow} onPress={() => router.push(`/statement/${row.statementId}`)}>
+              <View style={[styles.cell, styles.memberCell]}>
+                <Text style={styles.memberLabel}>{row.memberName}</Text>
+              </View>
+              <View style={[styles.cell, styles.meetingCell]}>
+                <Text style={styles.meetingLabel} numberOfLines={1}>
+                  {meetingSessionTitle(row.meetingTitle)}
+                </Text>
+              </View>
+              <View style={[styles.cell, styles.tagsCell]}>
+                <Text style={styles.tagsLabel} numberOfLines={1}>
+                  {row.tags.join(", ")}
+                </Text>
+              </View>
+              <View style={[styles.cell, styles.scoreCell]}>
+                <Text style={styles.scoreLabel}>{kpiCellLabel(row, activeKpi)}</Text>
+              </View>
+            </Pressable>
+          );
+        }}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  list: { flex: 1 },
   content: { padding: spacing[12] },
+  kpiSelectorRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing[8], padding: spacing[12] },
+  kpiChip: {
+    paddingHorizontal: spacing[10],
+    paddingVertical: spacing[6],
+    borderRadius: radius.full,
+    backgroundColor: colors.fill.normal,
+  },
+  kpiChipActive: { backgroundColor: colors.primary.normal },
+  kpiChipLabel: { ...typography.label2, color: colors.label.neutral },
+  kpiChipLabelActive: { color: colors.background.normal },
   headerRow: {
     flexDirection: "row",
     backgroundColor: colors.background.alternative,
@@ -134,7 +166,7 @@ const styles = StyleSheet.create({
   memberCell: { width: 68 },
   meetingCell: { width: 84 },
   tagsCell: { flex: 1 },
-  scoreCell: { width: 72, alignItems: "flex-end" },
+  scoreCell: { width: 88, alignItems: "flex-end" },
   headerLabel: { ...typography.label2, color: colors.label.alternative },
   memberLabel: { ...typography.label1, color: colors.primary.normal, textDecorationLine: "underline" },
   meetingLabel: { ...typography.caption1, color: colors.label.neutral },

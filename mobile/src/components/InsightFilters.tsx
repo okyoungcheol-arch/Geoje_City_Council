@@ -2,7 +2,7 @@
 import { createElement, useState, type ChangeEvent } from "react";
 import { Platform, View, Text, StyleSheet, Pressable, ScrollView, Modal } from "react-native";
 import { colors, typography, spacing, radius, fontWeights } from "@/theme/tokens";
-import { meetingSessionTitle } from "@/lib/axes";
+import { meetingSessionTitle } from "@/lib/kpis";
 
 interface Props {
   members: string[];

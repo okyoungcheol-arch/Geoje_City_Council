@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import { ScrollView, Text, View, ActivityIndicator, StyleSheet, Pressable } from "react-native";
 import { fetchInsightWithSiblings, type InsightRow } from "@/lib/api";
-import { AXES, AXIS_LABELS, axisCellLabel } from "@/lib/axes";
+import { KPIS, KPI_LABELS, kpiCellLabel } from "@/lib/kpis";
 import { colors, typography, spacing, radius } from "@/theme/tokens";
 
 export default function StatementDetailScreen() {
@@ -39,15 +39,11 @@ export default function StatementDetailScreen() {
       <Text style={styles.meeting}>{row.meetingTitle}</Text>
       <Text style={styles.member}>{row.memberName}</Text>
 
-      <View style={styles.scoreBadge}>
-        <Text style={styles.scoreBadgeLabel}>가중평균 {row.weightedScore.toFixed(2)}</Text>
-      </View>
-
       <View style={styles.scoreGrid}>
-        {AXES.map((axis) => (
-          <View key={axis} style={styles.scoreGridItem}>
-            <Text style={styles.scoreGridLabel}>{AXIS_LABELS[axis]}</Text>
-            <Text style={styles.scoreGridValue}>{axisCellLabel(row[axis], axis, row.persistenceStatus)}</Text>
+        {KPIS.map((kpi) => (
+          <View key={kpi} style={styles.scoreGridItem}>
+            <Text style={styles.scoreGridLabel}>{KPI_LABELS[kpi]}</Text>
+            <Text style={styles.scoreGridValue}>{kpiCellLabel(row, kpi)}</Text>
           </View>
         ))}
       </View>
@@ -63,6 +59,52 @@ export default function StatementDetailScreen() {
         <Text style={styles.body}>없음</Text>
       )}
 
+      <Text style={styles.sectionTitle}>인용 근거</Text>
+      {row.citations.length > 0 ? (
+        row.citations.map((c, i) => (
+          <Text key={i} style={styles.body}>
+            [{c.type}] {c.text}
+          </Text>
+        ))
+      ) : (
+        <Text style={styles.body}>없음</Text>
+      )}
+
+      {row.proposals.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>제안 요소 체크</Text>
+          {row.proposals.map((p, i) => (
+            <Text key={i} style={styles.body}>
+              제안 {i + 1}: 예산{p.budget ? "✓" : "✗"} 시기{p.timeline ? "✓" : "✗"} 주체
+              {p.subject ? "✓" : "✗"} 방법{p.method ? "✓" : "✗"}
+            </Text>
+          ))}
+        </>
+      )}
+
+      {row.qaRounds.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>질의응답 왕복</Text>
+          {row.qaRounds.map((r) => (
+            <Text key={r.roundIndex} style={styles.body}>
+              round {r.roundIndex + 1}: {r.answerGrade}
+              {r.bonusTags.length > 0 ? ` (${r.bonusTags.join(", ")})` : ""}
+            </Text>
+          ))}
+        </>
+      )}
+
+      {row.selfRaisedIssues.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>등록된 이슈</Text>
+          {row.selfRaisedIssues.map((issue, i) => (
+            <Text key={i} style={styles.body}>
+              · {issue.description}
+            </Text>
+          ))}
+        </>
+      )}
+
       <Text style={styles.sectionTitle}>요약</Text>
       <Text style={styles.body}>{row.summary}</Text>
       <Text style={styles.sectionTitle}>회의록 원문</Text>
@@ -76,7 +118,7 @@ export default function StatementDetailScreen() {
           {siblings.map((s) => (
             <Pressable key={s.statementId} style={styles.siblingCard} onPress={() => router.push(`/statement/${s.statementId}`)}>
               <View style={styles.siblingHeaderRow}>
-                <Text style={styles.siblingScore}>{s.weightedScore.toFixed(2)}</Text>
+                <Text style={styles.siblingScore}>{kpiCellLabel(s, "evidenceDensity")}</Text>
                 <Text style={styles.siblingTopic}>{s.tags[0] ?? s.summary.slice(0, 24)}</Text>
               </View>
             </Pressable>
@@ -92,15 +134,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background.normal },
   meeting: { ...typography.caption2, color: colors.label.alternative },
   member: { ...typography.title3, color: colors.label.normal, marginBottom: spacing[8] },
-  scoreBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.fill.normal,
-    borderRadius: radius[8],
-    paddingHorizontal: spacing[10],
-    paddingVertical: spacing[4],
-    marginBottom: spacing[12],
-  },
-  scoreBadgeLabel: { ...typography.label1, color: colors.primary.normal },
   scoreGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing[8] },
   scoreGridItem: {
     width: "23%",

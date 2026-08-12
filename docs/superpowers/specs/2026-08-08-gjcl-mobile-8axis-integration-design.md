@@ -1,5 +1,9 @@
 # 모바일 앱 8축 실데이터 완전 통합 Design Spec
 
+> **⚠️ 대체됨 (2026-08-11)**: 이 문서가 다루는 8축 모바일 통합은
+> `docs/superpowers/specs/2026-08-11-gjcl-5kpi-rubric-design.md`(§5 UI 매핑)의 5-KPI 모바일 통합으로
+> 완전히 대체되었다. 이 문서는 역사적 기록으로만 보존한다.
+
 **Date:** 2026-08-08
 **Status:** Approved
 

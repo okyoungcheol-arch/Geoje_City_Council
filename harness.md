@@ -47,3 +47,18 @@ npx dotenv -e .env.local -- npx tsx scripts/pipeline/run.ts
 ## 배포 시 차이점
 
 Vercel에 배포된 `backend/`는 `VERCEL_OIDC_TOKEN`을 자동으로 관리하므로 별도 조치가 필요 없습니다. `DATABASE_URL`만 Vercel 프로젝트의 프로덕션 환경변수로 설정되어 있으면 됩니다. 배치 스크립트(`scripts/scrape`, `scripts/pipeline`)는 Vercel Functions로 배포되는 것이 아니라 **로컬(또는 CI)에서 수동 실행**하는 것을 전제로 합니다 — 실행 시간이 길고 스케줄링이 필요 없는 1회성 작업이기 때문입니다.
+
+## DB 스키마 변경 워크플로 (중요 — 드리프트 주의)
+
+`backend/drizzle/`의 마이그레이션 이력(`0000_bizarre_firedrake.sql`, `0001_puzzling_skin.sql`)은 라이브 DB의
+`drizzle.__drizzle_migrations` 원장에 실제로 기록되어 있지만, **8축 → 5-KPI 전환 이후의 스키마 변경은
+`drizzle-kit push`로 직접 적용되어 마이그레이션 파일로 남지 않았습니다** — 즉 `schema.ts`가 기술하는 현재
+스키마와 `backend/drizzle/`의 마이그레이션 파일 이력이 이미 어긋나 있는 상태입니다.
+
+- **새 컬럼/테이블 추가**: `schema.ts` 수정 후 `npx dotenv -e .env.local -- npx drizzle-kit push --verbose`로
+  라이브 DB에 직접 적용합니다. 출력되는 SQL diff가 의도한 변경(예: 컬럼 1개 추가)만 포함하는지 반드시 확인 후
+  진행하세요.
+- **절대 하지 말 것**: `backend/drizzle/`의 기존 마이그레이션 파일이나 `meta/*.json`을 임의로 삭제·재생성하지
+  마세요 — 라이브 DB의 마이그레이션 원장이 그 파일들의 해시를 실제로 참조하고 있어, 삭제하면 향후
+  `drizzle-kit migrate`를 다시 쓸 때 원장이 깨집니다. 이력을 다시 정리하려면 원장 자체를 다루는 별도 작업으로
+  분리하고, 진행 전 사람에게 먼저 확인받으세요.
