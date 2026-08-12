@@ -41,7 +41,6 @@ export default function IndexScreen() {
 
   function handleIssueTrackingTabPress() {
     if (tab === "issueTracking") return;
-    setMemberFilter("");
     setMeetingFilter("");
     setTab("issueTracking");
   }
@@ -91,7 +90,7 @@ export default function IndexScreen() {
       <Text style={styles.kpiExplainer}>
         5개 KPI(사전준비도·정책생산력·실시간 압박력·성과전환력·사후책임성)는 종합 순위점수 없이 항상 독립적으로
         표시됩니다. 질의응답 구조가 없는 발언은 실시간 압박력·성과전환력이 &apos;―&apos;로 표기됩니다. 항목별 값은
-        &apos;세부항목&apos; 탭에서 확인할 수 있습니다.
+        &apos;지표전체&apos; 탭에서 확인할 수 있습니다.
       </Text>
 
       <View style={styles.tabBar}>
@@ -99,7 +98,7 @@ export default function IndexScreen() {
           <Text style={[styles.tabLabel, tab === "overview" && styles.tabLabelActive]}>개요</Text>
         </Pressable>
         <Pressable style={[styles.tabButton, tab === "scores" && styles.tabButtonActive]} onPress={() => setTab("scores")}>
-          <Text style={[styles.tabLabel, tab === "scores" && styles.tabLabelActive]}>세부항목</Text>
+          <Text style={[styles.tabLabel, tab === "scores" && styles.tabLabelActive]}>지표전체</Text>
         </Pressable>
         <Pressable style={[styles.tabButton, tab === "issueTracking" && styles.tabButtonActive]} onPress={handleIssueTrackingTabPress}>
           <Text style={[styles.tabLabel, tab === "issueTracking" && styles.tabLabelActive]}>이슈추적사항</Text>
@@ -107,7 +106,7 @@ export default function IndexScreen() {
       </View>
 
       {tab === "issueTracking" ? (
-        <IssueTrackingTab />
+        <IssueTrackingTab memberFilter={memberFilter} />
       ) : fetchFailed ? (
         <View style={styles.center}>
           <Text style={styles.body}>데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</Text>
@@ -144,12 +143,17 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: "row",
     marginHorizontal: spacing[12],
-    backgroundColor: colors.fill.normal,
-    borderRadius: radius[8],
-    padding: spacing[2],
+    marginBottom: spacing[8],
+    gap: spacing[8],
   },
-  tabButton: { flex: 1, paddingVertical: spacing[8], alignItems: "center", borderRadius: radius[6] },
-  tabButtonActive: { backgroundColor: colors.background.normal },
-  tabLabel: { ...typography.label1, color: colors.label.alternative },
-  tabLabelActive: { color: colors.primary.normal },
+  tabButton: {
+    flex: 1,
+    paddingVertical: spacing[8],
+    alignItems: "center",
+    borderRadius: radius.full,
+    backgroundColor: colors.fill.normal,
+  },
+  tabButtonActive: { backgroundColor: colors.primary.normal },
+  tabLabel: { ...typography.label1, color: colors.label.normal },
+  tabLabelActive: { color: colors.background.normal },
 });

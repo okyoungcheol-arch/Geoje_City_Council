@@ -1,5 +1,5 @@
 // mobile/src/components/table1/IssueTrackingTab.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { fetchIssueTickets, type IssueTicket } from "@/lib/api";
@@ -9,7 +9,12 @@ function ticketCode(index: number): string {
   return `T-${String(index + 1).padStart(2, "0")}`;
 }
 
-export function IssueTrackingTab() {
+interface Props {
+  /** 선택된 의원 이름. 빈 문자열이면 전체 의원의 이슈를 보여준다. */
+  memberFilter: string;
+}
+
+export function IssueTrackingTab({ memberFilter }: Props) {
   const [tickets, setTickets] = useState<IssueTicket[] | null>(null);
 
   useEffect(() => {
@@ -18,6 +23,14 @@ export function IssueTrackingTab() {
       .catch(() => setTickets([]));
   }, []);
 
+  // 티켓 코드(T-01, T-02, ...)는 필터와 무관하게 전체 목록 순서로 고정해야 화면을 오가도
+  // 같은 이슈가 같은 번호를 유지한다.
+  const codeByTicketId = useMemo(() => {
+    const map = new Map<number, string>();
+    (tickets ?? []).forEach((ticket, index) => map.set(ticket.id, ticketCode(index)));
+    return map;
+  }, [tickets]);
+
   if (!tickets) {
     return (
       <View style={styles.center}>
@@ -25,6 +38,8 @@ export function IssueTrackingTab() {
       </View>
     );
   }
+
+  const filteredTickets = memberFilter ? tickets.filter((t) => t.memberName === memberFilter) : tickets;
 
   const header = (
     <View style={styles.headerRow}>
@@ -48,19 +63,21 @@ export function IssueTrackingTab() {
       <FlatList
         style={styles.list}
         contentContainerStyle={styles.content}
-        data={tickets}
+        data={filteredTickets}
         keyExtractor={(ticket) => String(ticket.id)}
         ListHeaderComponent={header}
         stickyHeaderIndices={[0]}
         ListEmptyComponent={
           <View style={styles.center}>
-            <Text style={styles.body}>추적 중인 이슈가 없습니다.</Text>
+            <Text style={styles.body}>
+              {memberFilter ? "선택한 의원의 추적 중인 이슈가 없습니다." : "추적 중인 이슈가 없습니다."}
+            </Text>
           </View>
         }
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <Pressable style={styles.dataRow} onPress={() => router.push(`/statement/${item.registeredStatementId}`)}>
             <View style={[styles.cell, styles.codeCell]}>
-              <Text style={styles.codeLabel}>{ticketCode(index)}</Text>
+              <Text style={styles.codeLabel}>{codeByTicketId.get(item.id)}</Text>
             </View>
             <View style={[styles.cell, styles.memberCell]}>
               <Text style={styles.memberLabel}>{item.memberName}</Text>
